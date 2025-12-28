@@ -10,11 +10,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
+    name: Ruby ${{ matrix.ruby }}, Rails ${{ matrix.rails }}
     strategy:
       matrix:
         ruby:
           - "3.3.0"
+        rails:
+          - "7.0"
+          - "7.1"
+          - "8.0"
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
@@ -23,5 +28,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+      - name: Install Appraisal
+        run: bundle exec appraisal install
       - name: Tests and lint
-        run: bundle exec rake
+        run: bundle exec appraisal rails-${{ matrix.rails }} bundle exec rake
