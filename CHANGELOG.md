@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+- Testing against Rails 8.0 and Rails 8.1
+
+### Changed
+- Ruby 3.4 as a default testing target
+
 ## 0.4.2
 
 - When processing a webhook, print messages to the ActiveJob logger. This allows for quicker debugging if the app does not have an error tracking service set up
