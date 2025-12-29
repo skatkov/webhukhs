@@ -32,9 +32,9 @@ Use Appraisal to test against different Rails versions:
 bundle exec appraisal install
 
 # Run tests against specific Rails version
-bundle exec appraisal rails-7.0 bundle exec rake test
 bundle exec appraisal rails-7.1 bundle exec rake test
 bundle exec appraisal rails-8.0 bundle exec rake test
+bundle exec appraisal rails-8.1 bundle exec rake test
 
 # Run tests against all Rails versions
 bundle exec appraisal bundle exec rake test
@@ -200,7 +200,8 @@ Test handlers in `test/test-webhook-handlers/` demonstrate various scenarios:
 - Private/route param preservation
 
 ### Rails Version Compatibility
-Test app in `test/test_app.rb` sets `active_support.cache_format_version` dynamically based on Rails version (7.0 for Rails 7.0, 7.1 for Rails 7.1+).
+Test app in `test/test_app.rb` sets `active_support.cache_format_version` dynamically based on Rails version (7.1 for Rails 7.1+).
+CI tests against Rails 7.1, 8.0, and 8.1. Ruby 4.0 is only tested with Rails 8.x due to dependency compatibility.
 
 ## Important Gotchas
 
@@ -268,8 +269,9 @@ post "/incoming-webhooks/:user_id/:service_id" => "munster/receive_webhooks#crea
 ## CI/CD
 
 GitHub Actions workflow (`.github/workflows/main.yml`):
-- Tests on Ruby 3.3.0 and 4.0
-- Tests against Rails 7.0, 7.1, and 8.0 using Appraisal
+- Tests on Ruby 3.3.0 (all Rails versions) and 4.0 (Rails 8.x only)
+- Tests against Rails 7.1, 8.0, and 8.1 using Appraisal
 - Executes `bundle exec rake` (tests + linting) for each Ruby/Rails combination
 - Runs on push to `main` and on pull requests
 - `RAILS_DEPRECATIONS_TO_STDOUT=true` enables deprecation warnings in output
+- Note: Ruby 4.0 only tests Rails 8.x due to Nokogiri compatibility issues with Rails 7.1
