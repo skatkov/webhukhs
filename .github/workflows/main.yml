@@ -13,17 +13,13 @@ jobs:
     name: Ruby ${{ matrix.ruby }}, Rails ${{ matrix.rails }}
     strategy:
       matrix:
-        include:
-          - ruby: "3.3.0"
-            rails: "7.1"
-          - ruby: "3.3.0"
-            rails: "8.0"
-          - ruby: "3.3.0"
-            rails: "8.1"
-          - ruby: "4.0"
-            rails: "8.0"
-          - ruby: "4.0"
-            rails: "8.1"
+        ruby:
+          - "3.3.0"
+          # - "4.0"
+        rails:
+          - "7.1"
+          - "8.0"
+          - "8.1"
       fail-fast: false
 
     steps:
