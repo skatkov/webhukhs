@@ -5,6 +5,7 @@ source "https://rubygems.org"
 gem "sqlite3", "~> 2.0"
 gem "sprockets-rails"
 gem "appraisal"
-gem "rails", "~> 8.1.0"
+gem "rails", "~> 8.1"
+gem "minitest", "~> 6.0"
 
 gemspec path: "../"
