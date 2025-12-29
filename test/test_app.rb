@@ -25,6 +25,24 @@ end
 
 require_relative "../lib/munster"
 require_relative "test-webhook-handlers/webhook_test_handler"
+require_relative "test-webhook-handlers/inactive_handler"
+require_relative "test-webhook-handlers/invalid_handler"
+require_relative "test-webhook-handlers/private_handler"
+require_relative "test-webhook-handlers/failing_with_exposed_errors"
+require_relative "test-webhook-handlers/failing_with_concealed_errors"
+require_relative "test-webhook-handlers/extract_id_handler"
+
+Munster.configure do |config|
+  config.active_handlers = {
+    test: "WebhookTestHandler",
+    inactive: "InactiveHandler",
+    invalid: "InvalidHandler",
+    private: "PrivateHandler",
+    "failing-with-exposed-errors": "FailingWithExposedErrors",
+    "failing-with-concealed-errors": "FailingWithConcealedErrors",
+    extract_id: "ExtractIdHandler"
+  }
+end
 
 class MunsterTestApp < Rails::Application
   config.logger = Logger.new(nil)

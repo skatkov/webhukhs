@@ -263,7 +263,7 @@ DEPENDENCIES
   rails (~> 8.0.0)
   rake (~> 13.0)
   sprockets-rails
-  sqlite3
+  sqlite3 (~> 2.0)
   standard
 
 BUNDLED WITH

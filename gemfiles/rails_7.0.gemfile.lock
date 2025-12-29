@@ -116,6 +116,7 @@ GEM
     marcel (1.1.0)
     method_source (1.1.0)
     mini_mime (1.1.5)
+    mini_portile2 (2.8.9)
     minitest (5.27.0)
     mutex_m (0.3.0)
     net-imap (0.6.2)
@@ -198,7 +199,8 @@ GEM
       actionpack (>= 6.1)
       activesupport (>= 6.1)
       sprockets (>= 3.0.0)
-    sqlite3 (2.8.1-x86_64-linux-gnu)
+    sqlite3 (1.7.3)
+      mini_portile2 (~> 2.8.0)
     standard (1.52.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -237,7 +239,7 @@ DEPENDENCIES
   rails (~> 7.0.0)
   rake (~> 13.0)
   sprockets-rails
-  sqlite3
+  sqlite3 (~> 1.4)
   standard
 
 BUNDLED WITH
