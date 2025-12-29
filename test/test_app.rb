@@ -51,7 +51,7 @@ class MunsterTestApp < Rails::Application
   config.eager_load = false
   config.consider_all_requests_local = true
   config.secret_key_base = "i_am_a_secret"
-  config.active_support.cache_format_version = (Rails.gem_version >= Gem::Version.new("7.1")) ? 7.1 : 7.0
+  config.active_support.cache_format_version = 7.1
   config.active_job.queue_adapter = :test
   config.hosts << ->(host) { true } # Permit all hosts
 

@@ -32,4 +32,4 @@ jobs:
       - name: Install Appraisal
         run: bundle exec appraisal install
       - name: Tests and lint
-        run: bundle exec appraisal rails-${{ matrix.rails }} bundle exec rake
+        run: bundle exec appraisal rails-${{ matrix.rails }} rake
