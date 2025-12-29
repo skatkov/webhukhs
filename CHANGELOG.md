@@ -5,11 +5,8 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
-### Added
-- Testing against Rails 8.0 and Rails 8.1
-
-### Changed
-- Ruby 3.4 as a default testing target
+- Testing against rails 7.1, rails 8.0 and rails 8.1
+- Ruby 3.4 used as a default testing target
 
 ## 0.4.2
 
