@@ -1,6 +1,6 @@
-Munster.configure do |config|
+Webhukhs.configure do |config|
   # Active Handlers are defined as hash with key as a service_id and handler class  that would handle webhook request.
-  # A Handler must respond to `.new` and return an object roughly matching `Munster::BaseHandler` in terms of interface.
+  # A Handler must respond to `.new` and return an object roughly matching `Webhukhs::BaseHandler` in terms of interface.
   # Use module names (strings) here to allow the handler modules to be lazy-loaded by Rails.
   #
   # Example:
@@ -8,12 +8,12 @@ Munster.configure do |config|
   config.active_handlers = {}
 
   # It's possible to overwrite default processing job to enahance it. As example if you want to add custom
-  # locking or retry mechanism. You want to inherit that job from Munster::ProcessingJob because the background
+  # locking or retry mechanism. You want to inherit that job from Webhukhs::ProcessingJob because the background
   # job also manages the webhook state.
   #
   # Example:
   #
-  # class WebhookProcessingJob < Munster::ProcessingJob
+  # class WebhookProcessingJob < Webhukhs::ProcessingJob
   #   def perform(webhook)
   #     TokenLock.with(name: "webhook-processing-#{webhook.id}") do
   #       super(webhook)
@@ -31,7 +31,7 @@ Munster.configure do |config|
   #
   # config.error_context = { appsignal: { namespace: "webhooks" } }
 
-  # Incoming webhooks will be written into your DB without any prior validation. By default, Munster limits the
+  # Incoming webhooks will be written into your DB without any prior validation. By default, Webhukhs limits the
   # request body size for webhooks to 512 KiB, so that it would not be too easy for an attacker to fill your
   # database with junk. However, if you are receiving very large webhook payloads you might need to increase
   # that limit (or make it even smaller for extra security)

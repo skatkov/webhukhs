@@ -2,7 +2,7 @@
 
 require_relative "../../app/webhooks/webhook_test_handler"
 
-Munster.configure do |config|
+Webhukhs.configure do |config|
   config.active_handlers = {
     "test-handler" => "WebhookTestHandler"
   }

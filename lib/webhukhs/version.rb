@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-module Munster
+module Webhukhs
   VERSION = "0.4.2"
 end

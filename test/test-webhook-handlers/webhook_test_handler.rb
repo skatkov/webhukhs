@@ -1,4 +1,4 @@
-class WebhookTestHandler < Munster::BaseHandler
+class WebhookTestHandler < Webhukhs::BaseHandler
   def valid?(request)
     request.params.fetch(:isValid, false)
   end

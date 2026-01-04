@@ -1,5 +1,5 @@
 # This is for Revolut V1 API for webhooks - https://developer.revolut.com/docs/business/webhooks-v-1-deprecated
-class RevolutBusinessV1Handler < Munster::BaseHandler
+class RevolutBusinessV1Handler < Webhukhs::BaseHandler
   def valid?(_)
     # V1 of Revolut webhooks does not support signatures
     true

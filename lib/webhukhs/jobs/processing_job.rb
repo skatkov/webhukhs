@@ -2,12 +2,12 @@
 
 require "active_job/railtie"
 
-module Munster
+module Webhukhs
   class ProcessingJob < ActiveJob::Base
     def perform(webhook)
-      Rails.error.set_context(munster_handler_module_name: webhook.handler_module_name, **Munster.configuration.error_context)
+      Rails.error.set_context(webhukhs_handler_module_name: webhook.handler_module_name, **Webhukhs.configuration.error_context)
 
-      webhook_details_for_logs = "Munster::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
+      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
       webhook.with_lock do
         unless webhook.received?
           logger.info { "#{webhook_details_for_logs} is being processed in a different job or has been processed already, skipping." }

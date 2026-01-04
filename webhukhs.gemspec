@@ -1,22 +1,22 @@
 # frozen_string_literal: true
 
-require_relative "lib/munster/version"
+require_relative "lib/webhukhs/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "munster"
-  spec.version = Munster::VERSION
+  spec.name = "webhukhs"
+  spec.version = Webhukhs::VERSION
   spec.authors = ["Stanislav Katkov"]
   spec.email = ["skatkov@cheddar.me"]
 
   spec.summary = "Webhooks processing engine for Rails applications"
   spec.description = spec.summary
-  spec.homepage = "https://www.cheddar.me/"
+  spec.homepage = "https://github.com/skatkov/webhukhs"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/cheddar-me/munster"
-  spec.metadata["changelog_uri"] = "https://github.com/cheddar-me/munster/blob/main/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = "https://github.com/skatkov/webhukhs"
+  spec.metadata["changelog_uri"] = "https://github.com/skatkov/webhukhs/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

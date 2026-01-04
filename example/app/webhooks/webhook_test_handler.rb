@@ -2,7 +2,7 @@
 
 # This handler accepts webhooks from our integration tests. This webhook gets dispatched
 # if a banking provider test fails, indicating that the bank might be having an incident
-class WebhookTestHandler < Munster::BaseHandler
+class WebhookTestHandler < Webhukhs::BaseHandler
   def valid?(request) = true
 
   def process(webhook)

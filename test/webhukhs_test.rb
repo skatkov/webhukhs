@@ -3,11 +3,11 @@
 require "test_helper"
 require_relative "test_app"
 
-class TestMunster < ActionDispatch::IntegrationTest
-  teardown { Munster::ReceivedWebhook.delete_all }
+class TestWebhukhs < ActionDispatch::IntegrationTest
+  teardown { Webhukhs::ReceivedWebhook.delete_all }
 
   def test_that_it_has_a_version_number
-    refute_nil ::Munster::VERSION
+    refute_nil ::Webhukhs::VERSION
   end
 
   def webhook_body
@@ -22,7 +22,7 @@ class TestMunster < ActionDispatch::IntegrationTest
     JSON
   end
 
-  self.app = MunsterTestApp
+  self.app = WebhukhsTestApp
 
   def self.xtest(msg)
     test(msg) { skip }
@@ -33,8 +33,8 @@ class TestMunster < ActionDispatch::IntegrationTest
     body = {isValid: true, outputToFilename: tf.path}
     body_json = body.to_json
 
-    assert_enqueued_jobs 1, only: Munster::ProcessingJob do
-      post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    assert_enqueued_jobs 1, only: Webhukhs::ProcessingJob do
+      post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
       assert_response 200
     end
   end
@@ -44,10 +44,10 @@ class TestMunster < ActionDispatch::IntegrationTest
     body = {isValid: true, outputToFilename: tf.path}
     body_json = body.to_json
 
-    post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
 
-    webhook = Munster::ReceivedWebhook.last!
+    webhook = Webhukhs::ReceivedWebhook.last!
 
     assert_predicate webhook, :received?
     assert_equal "WebhookTestHandler", webhook.handler_module_name
@@ -65,10 +65,10 @@ class TestMunster < ActionDispatch::IntegrationTest
     body = {isValid: false, outputToFilename: tf.path}
     body_json = body.to_json
 
-    post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
 
-    webhook = Munster::ReceivedWebhook.last!
+    webhook = Webhukhs::ReceivedWebhook.last!
 
     assert_predicate webhook, :received?
     assert_equal "WebhookTestHandler", webhook.handler_module_name
@@ -87,10 +87,10 @@ class TestMunster < ActionDispatch::IntegrationTest
     body = {isValid: true, raiseDuringProcessing: true, outputToFilename: tf.path}
     body_json = body.to_json
 
-    post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
 
-    webhook = Munster::ReceivedWebhook.last!
+    webhook = Webhukhs::ReceivedWebhook.last!
 
     assert_predicate webhook, :received?
     assert_equal "WebhookTestHandler", webhook.handler_module_name
@@ -105,13 +105,13 @@ class TestMunster < ActionDispatch::IntegrationTest
   end
 
   test "does not accept a test payload that is larger than the configured maximum size" do
-    oversize = Munster.configuration.request_body_size_limit + 1
+    oversize = Webhukhs.configuration.request_body_size_limit + 1
     utf8_junk = Base64.strict_encode64(Random.bytes(oversize))
     body = {isValid: true, filler: utf8_junk, raiseDuringProcessing: false, outputToFilename: "/tmp/nothing"}
     body_json = body.to_json
 
-    post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
-    assert_raises(ActiveRecord::RecordNotFound) { Munster::ReceivedWebhook.last! }
+    post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    assert_raises(ActiveRecord::RecordNotFound) { Webhukhs::ReceivedWebhook.last! }
   end
 
   test "does not try to process a webhook if it is not in `received' state" do
@@ -119,10 +119,10 @@ class TestMunster < ActionDispatch::IntegrationTest
     body = {isValid: true, raiseDuringProcessing: true, outputToFilename: tf.path}
     body_json = body.to_json
 
-    post "/munster/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
 
-    webhook = Munster::ReceivedWebhook.last!
+    webhook = Webhukhs::ReceivedWebhook.last!
     webhook.processing!
 
     perform_enqueued_jobs
@@ -133,19 +133,19 @@ class TestMunster < ActionDispatch::IntegrationTest
   end
 
   test "raises an error if the service_id is not known" do
-    post "/munster/missing_service", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/missing_service", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 404
   end
 
   test "returns a 503 when a handler is inactive" do
-    post "/munster/inactive", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/inactive", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
     assert_response 503
     assert_equal 'Webhook handler "inactive" is inactive', response.parsed_body["error"]
   end
 
   test "returns a 200 status and error message if the handler does not expose errors" do
-    post "/munster/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
     assert_response 200
     assert_equal false, response.parsed_body["ok"]
@@ -153,7 +153,7 @@ class TestMunster < ActionDispatch::IntegrationTest
   end
 
   test "returns a 500 status and error message if the handler does not expose errors" do
-    post "/munster/failing-with-exposed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    post "/webhukhs/failing-with-exposed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
     assert_response 500
     # The response generation in this case is done by Rails, through the
@@ -163,9 +163,9 @@ class TestMunster < ActionDispatch::IntegrationTest
   test "deduplicates received webhooks based on the event ID" do
     body = {event_id: SecureRandom.uuid, body: "test"}.to_json
 
-    assert_changes_by -> { Munster::ReceivedWebhook.count }, exactly: 1 do
+    assert_changes_by -> { Webhukhs::ReceivedWebhook.count }, exactly: 1 do
       3.times do
-        post "/munster/extract_id", params: body, headers: {"CONTENT_TYPE" => "application/json"}
+        post "/webhukhs/extract_id", params: body, headers: {"CONTENT_TYPE" => "application/json"}
         assert_response 200
       end
     end
@@ -174,11 +174,11 @@ class TestMunster < ActionDispatch::IntegrationTest
   test "preserves the route params and the request params in the serialised request stored with the webhook" do
     body = {user_name: "John", number_of_dependents: 14}.to_json
 
-    Munster::ReceivedWebhook.delete_all
-    post "/per-user-munster/123/private", params: body, headers: {"CONTENT_TYPE" => "application/json"}
+    Webhukhs::ReceivedWebhook.delete_all
+    post "/per-user-webhukhs/123/private", params: body, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
 
-    received_webhook = Munster::ReceivedWebhook.first!
+    received_webhook = Webhukhs::ReceivedWebhook.first!
     assert_predicate received_webhook, :received?
     assert_equal body, received_webhook.request.body.read
     assert_equal "John", received_webhook.request.params["user_name"]
@@ -187,14 +187,14 @@ class TestMunster < ActionDispatch::IntegrationTest
   end
 
   test "erroneous webhook could be processed again" do
-    webhook = Munster::ReceivedWebhook.create(
+    webhook = Webhukhs::ReceivedWebhook.create(
       handler_event_id: "test",
       handler_module_name: "WebhookTestHandler",
       status: "error",
       body: {isValid: true}.to_json
     )
 
-    assert_enqueued_jobs 1, only: Munster::ProcessingJob do
+    assert_enqueued_jobs 1, only: Webhukhs::ProcessingJob do
       webhook.received!
 
       assert_equal "received", webhook.status

@@ -1,5 +1,5 @@
 # This is for Revolut V2 API for webhooks - https://developer.revolut.com/docs/business/webhooks-v-2
-class RevolutBusinessV2Handler < Munster::BaseHandler
+class RevolutBusinessV2Handler < Webhukhs::BaseHandler
   def valid?(request)
     # 1 - Validate the timestamp of the request. Prevent replay attacks.
     # "To validate the event, make sure that the Revolut-Request-Timestamp date-time is within a 5-minute time tolerance of the current universal time (UTC)".
