@@ -17,3 +17,7 @@
 .DS_Store
 
 development.sqlite3*
+/vendor/
+gemfiles/vendor/
+gemfiles/.bundle/
+example/vendor/
