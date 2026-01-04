@@ -22,17 +22,6 @@ class TestMunster < ActionDispatch::IntegrationTest
     JSON
   end
 
-  Munster.configure do |config|
-    config.active_handlers = {
-      test: WebhookTestHandler,
-      inactive: "InactiveHandler",
-      invalid: "InvalidHandler",
-      private: "PrivateHandler",
-      "failing-with-exposed-errors": "FailingWithExposedErrors",
-      "failing-with-concealed-errors": "FailingWithConcealedErrors",
-      extract_id: "ExtractIdHandler"
-    }
-  end
   self.app = MunsterTestApp
 
   def self.xtest(msg)
