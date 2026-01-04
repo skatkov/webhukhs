@@ -15,19 +15,18 @@ jobs:
       matrix:
         ruby:
           - "3.4"
-          - "4.0"
+          - "head"
         rails:
           - "7.1"
           - "8.0"
           - "8.1"
       fail-fast: false
-    continue-on-error: ${{ matrix.ruby == '4.0' }}
+    continue-on-error: ${{ matrix.ruby == 'head' }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
-        continue-on-error: ${{ matrix.ruby == '4.0' }}
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
