@@ -1,6 +1,6 @@
 # Webhukhs
 
-Webhukhs is a Rails engine that provides a webhook endpoint for receiving and processing webhooks from various services. Engine stores received webhook first and later processes webhook in a separete async process.
+Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process. 
 
 ## Installation
 
