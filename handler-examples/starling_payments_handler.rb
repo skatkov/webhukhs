@@ -2,7 +2,7 @@
 
 # This handler is an example for Starling Payments API,
 # you can find the documentation here https://developer.starlingbank.com/payments/docs#account-and-address-structure-1
-class StarlingPaymentsHandler < Munster::BaseHandler
+class StarlingPaymentsHandler < Webhukhs::BaseHandler
   # This method will be used to process webhook by async worker.
   def process(received_webhook)
     Rails.logger.info { received_webhook.body }

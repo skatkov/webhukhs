@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Munster
+module Webhukhs
   class ReceiveWebhooksController < ActionController::API
     class HandlerInactive < StandardError
     end
@@ -9,7 +9,7 @@ module Munster
     end
 
     def create
-      Rails.error.set_context(**Munster.configuration.error_context)
+      Rails.error.set_context(**Webhukhs.configuration.error_context)
       handler = lookup_handler(service_id)
       raise HandlerInactive unless handler.active?
       handler.handle(request)
@@ -37,7 +37,7 @@ module Munster
     end
 
     def lookup_handler(service_id_str)
-      active_handlers = Munster.configuration.active_handlers.with_indifferent_access
+      active_handlers = Webhukhs.configuration.active_handlers.with_indifferent_access
       # The config can specify a mapping of:
       # {"service-1" => MyHandler }
       # or

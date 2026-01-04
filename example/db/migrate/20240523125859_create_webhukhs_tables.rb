@@ -1,12 +1,11 @@
-class CreateMunsterTables < ActiveRecord::Migration<%= migration_version %>
-<% id_type = Rails.application.config.generators.options[:active_record][:primary_key_type] rescue nil %>
+class CreateWebhukhsTables < ActiveRecord::Migration[7.0]
   def change
-    create_table :received_webhooks <%= ", id: :#{id_type}" if id_type %> do |t|
+    create_table :received_webhooks do |t|
       t.string :handler_event_id, null: false
       t.string :handler_module_name, null: false
       t.string :status, default: "received", null: false
 
-      # We don't assume that we can always parse the received body as JSON. Body could be invalid or partly missing,
+      # We don't assume, that we can always parse received body as JSON. Body could be invalid or partly missing,
       # we can argue how we can handle that for different integrations, but we still should be able to save this data
       # if it's required. Hence, we don't use :jsonb, but :binary type column here.
       t.binary :body, null: false

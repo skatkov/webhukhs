@@ -5,13 +5,13 @@ require_relative "jobs/processing_job"
 require_relative "models/received_webhook"
 require_relative "base_handler"
 
-module Munster
+module Webhukhs
   class Engine < ::Rails::Engine
-    isolate_namespace Munster
+    isolate_namespace Webhukhs
 
-    autoload :ReceiveWebhooksController, "munster/controllers/receive_webhooks_controller"
-    autoload :ProcessingJob, "munster/jobs/processing_job"
-    autoload :BaseHandler, "munster/base_handler"
+    autoload :ReceiveWebhooksController, "webhukhs/controllers/receive_webhooks_controller"
+    autoload :ProcessingJob, "webhukhs/jobs/processing_job"
+    autoload :BaseHandler, "webhukhs/base_handler"
 
     generators do
       require_relative "install_generator"

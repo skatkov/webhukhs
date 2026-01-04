@@ -1,36 +1,30 @@
-# Munster
+# Webhukhs
 
-Munster is a Rails engine that provides a webhook endpoint for receiving and processing webhooks from various services. Engine stores received webhook first and later processes webhook in a separete async process.
-
-> [!CAUTION]
-> At the moment Munster is only used internally at Cheddar. Any support to external parties is on best-effort
-> basis. While we are happy to see issues and pull requests, we can't guarantee that those will be addressed
-> quickly. The engine does receive rapid updates which may break your application if you come to depend on
-> the library. That is to be expected.
+Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process. 
 
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add munster
+    $ bundle add webhukhs
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install munster
+    $ gem install webhukhs
 
 ## Usage
 
 Generate migrations and initializer file.
 
-`bin/rails g munster:install`
+`bin/rails g webhukhs:install`
 
-Mount munster engine in your routes.
+Mount webhukhs engine in your routes.
 
 ```ruby
-mount Munster::Engine, at: "/webhooks"
+mount Webhukhs::Engine, at: "/webhooks"
 ```
 
-Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Munster::BaseHandler`. Place it somewhere where Rails autoloading can find it, and add it to your `munster.rb` config file:
+Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. Place it somewhere where Rails autoloading can find it, and add it to your `webhukhs.rb` config file:
 
 ```ruby
 config.active_handlers = {
@@ -40,7 +34,7 @@ config.active_handlers = {
 
 ## Example handlers
 
-We provide a number of webhook handlers which demonstrate certain features of Munster. You will find them in `handler-examples`.
+We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`.
 
 ## Requirements
 
@@ -56,7 +50,7 @@ This gem uses [Rails common error reporter](https://guides.rubyonrails.org/error
 It's possible to provide additional context for every error. e.g.
 
 ```ruby
-Munster.configure do |config|
+Webhukhs.configure do |config|
   config.error_context = { appsignal: { namespace: "webhooks" } }
 end
 ```
@@ -69,7 +63,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/cheddar-me/munster.
+Bug reports and pull requests are welcome on GitHub at https://github.com/skatkov/webhukhs.
 
 ## License
 

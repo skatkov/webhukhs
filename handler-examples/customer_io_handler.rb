@@ -1,6 +1,6 @@
 # This is an example handler for Customer.io reporting webhooks. You
 # can find more documentation here https://customer.io/docs/api/webhooks/#operation/reportingWebhook
-class Webhooks::CustomerIoHandler < Munster::BaseHandler
+class Webhooks::CustomerIoHandler < Webhukhs::BaseHandler
   def process(webhook)
     json = JSON.parse(webhook.body, symbolize_names: true)
     case json[:metric]

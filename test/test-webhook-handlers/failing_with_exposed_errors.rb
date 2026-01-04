@@ -1,4 +1,4 @@
-class FailingWithExposedErrors < Munster::BaseHandler
+class FailingWithExposedErrors < Webhukhs::BaseHandler
   def handle(_request)
     raise "oops"
   end

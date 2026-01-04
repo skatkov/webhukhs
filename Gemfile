@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in munster.gemspec
+# Specify your gem's dependencies in webhukhs.gemspec
 gemspec
 
 gem "sqlite3"

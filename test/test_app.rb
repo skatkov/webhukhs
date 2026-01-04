@@ -23,7 +23,7 @@ ActiveRecord::Schema.define do
   end
 end
 
-require_relative "../lib/munster"
+require_relative "../lib/webhukhs"
 require_relative "test-webhook-handlers/webhook_test_handler"
 require_relative "test-webhook-handlers/inactive_handler"
 require_relative "test-webhook-handlers/invalid_handler"
@@ -32,7 +32,7 @@ require_relative "test-webhook-handlers/failing_with_exposed_errors"
 require_relative "test-webhook-handlers/failing_with_concealed_errors"
 require_relative "test-webhook-handlers/extract_id_handler"
 
-Munster.configure do |config|
+Webhukhs.configure do |config|
   config.active_handlers = {
     test: "WebhookTestHandler",
     inactive: "InactiveHandler",
@@ -44,7 +44,7 @@ Munster.configure do |config|
   }
 end
 
-class MunsterTestApp < Rails::Application
+class WebhukhsTestApp < Rails::Application
   config.logger = Logger.new(nil)
   config.autoload_paths << File.dirname(__FILE__) + "/test-webhook-handlers"
   config.root = __dir__
@@ -56,11 +56,11 @@ class MunsterTestApp < Rails::Application
   config.hosts << ->(host) { true } # Permit all hosts
 
   routes.append do
-    mount Munster::Engine, at: "/munster"
-    post "/per-user-munster/:user_id/:service_id" => "munster/receive_webhooks#create"
+    mount Webhukhs::Engine, at: "/webhukhs"
+    post "/per-user-webhukhs/:user_id/:service_id" => "webhukhs/receive_webhooks#create"
   end
 end
 
-MunsterTestApp.initialize!
+WebhukhsTestApp.initialize!
 
-# run MunsterTestApp
+# run WebhukhsTestApp

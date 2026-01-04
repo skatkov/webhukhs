@@ -1,4 +1,4 @@
-class FailingWithConcealedErrors < Munster::BaseHandler
+class FailingWithConcealedErrors < Webhukhs::BaseHandler
   def handle(_request)
     raise "oops"
   end

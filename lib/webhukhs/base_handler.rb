@@ -2,7 +2,7 @@
 
 require_relative "jobs/processing_job"
 
-module Munster
+module Webhukhs
   class BaseHandler
     # `handle` accepts the ActionDispatch HTTP request and saves the webhook for later processing. It then
     # enqueues an ActiveJob which will perform the processing using `process`.
@@ -10,10 +10,10 @@ module Munster
     # @param action_dispatch_request[ActionDispatch::Request] the request from the controller
     # @return [void]
     def handle(action_dispatch_request)
-      handler_module_name = is_a?(Munster::BaseHandler) ? self.class.name : to_s
+      handler_module_name = is_a?(Webhukhs::BaseHandler) ? self.class.name : to_s
       handler_event_id = extract_event_id_from_request(action_dispatch_request)
 
-      webhook = Munster::ReceivedWebhook.new(request: action_dispatch_request, handler_event_id: handler_event_id, handler_module_name: handler_module_name)
+      webhook = Webhukhs::ReceivedWebhook.new(request: action_dispatch_request, handler_event_id: handler_event_id, handler_module_name: handler_module_name)
       webhook.save!
 
       enqueue(webhook)
@@ -23,11 +23,11 @@ module Munster
 
     # Enqueues the processing job to process webhook asynchronously. The job class could be configured.
     #
-    # @param webhook [Munster::ReceivedWebhook]
+    # @param webhook [Webhukhs::ReceivedWebhook]
     # @return [void]
     def enqueue(webhook)
       # The configured job class can be a class name or a module, to support lazy loading
-      job_class_or_module_name = Munster.configuration.processing_job_class
+      job_class_or_module_name = Webhukhs.configuration.processing_job_class
       job_class = if job_class_or_module_name.respond_to?(:perform_later)
         job_class_or_module_name
       else
@@ -42,7 +42,7 @@ module Munster
     # body of the webhook request, but also the full (as-full-as-possible) clone of the original ActionDispatch::Request
     # that you can use.
     #
-    # @param received_webhook[Munster::ReceivedWebhook]
+    # @param received_webhook[Webhukhs::ReceivedWebhook]
     # @return [void]
     def process(received_webhook)
     end
@@ -60,7 +60,7 @@ module Munster
     # If this method returns `false`, the webhook will be marked as `failed_validation` in the database. If this
     # method returns `true`, the `process` method of the handler is going to be called.
     #
-    # @see Munster::ReceivedWebhook#request
+    # @see Webhukhs::ReceivedWebhook#request
     # @param action_dispatch_request[ActionDispatch::Request] the reconstructed request from the controller
     # @return [Boolean]
     def valid?(action_dispatch_request)
