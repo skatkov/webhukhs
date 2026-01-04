@@ -15,12 +15,13 @@ jobs:
       matrix:
         ruby:
           - "3.4"
-          # - "4.0"
+          - "4.0"
         rails:
           - "7.1"
           - "8.0"
           - "8.1"
       fail-fast: false
+    continue-on-error: ${{ matrix.ruby == '4.0' }}
 
     steps:
       - uses: actions/checkout@v4
