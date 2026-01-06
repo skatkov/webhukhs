@@ -9,6 +9,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Changed GitHub repository to https://github.com/skatkov/webhukhs
 - Testing against rails 7.1, rails 8.0 and rails 8.1
 - Ruby 3.4 used as a default testing target
+- Replaced deprecated `ActiveSupport::Configurable` with `class_attribute`
 
 ## 0.4.2
 
