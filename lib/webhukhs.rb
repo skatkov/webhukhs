@@ -3,7 +3,7 @@
 require_relative "webhukhs/version"
 require_relative "webhukhs/engine"
 require_relative "webhukhs/jobs/processing_job"
-require "active_support/configurable"
+require "active_support/core_ext/class/attribute"
 
 module Webhukhs
   def self.configuration
@@ -16,10 +16,8 @@ module Webhukhs
 end
 
 class Webhukhs::Configuration
-  include ActiveSupport::Configurable
-
-  config_accessor(:processing_job_class, default: Webhukhs::ProcessingJob)
-  config_accessor(:active_handlers, default: {})
-  config_accessor(:error_context, default: {})
-  config_accessor(:request_body_size_limit, default: 512.kilobytes)
+  class_attribute :processing_job_class, default: Webhukhs::ProcessingJob
+  class_attribute :active_handlers, default: {}
+  class_attribute :error_context, default: {}
+  class_attribute :request_body_size_limit, default: 512.kilobytes
 end
