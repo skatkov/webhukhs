@@ -5,6 +5,8 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+## 0.5.0
+
 - Forked from [munster](https://github.com/cheddar-me/munster) and renamed to webhukhs
 - Changed GitHub repository to https://github.com/skatkov/webhukhs
 - Testing against rails 7.1, rails 8.0 and rails 8.1
