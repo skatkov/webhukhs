@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name = "webhukhs"
   spec.version = Webhukhs::VERSION
   spec.authors = ["Stanislav Katkov"]
-  spec.email = ["skatkov@cheddar.me"]
+  spec.email = ["github@skatkov.com"]
 
   spec.summary = "Webhooks processing engine for Rails applications"
   spec.description = spec.summary
