@@ -1,7 +1,8 @@
 # Webhukhs
 
-Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process. 
+Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process.
 
+This is a fork of [cheddar-me/munster](https://github.com/cheddar-me/munster). Original project became unmaintained, so I continued it.
 ## Installation
 
 Install the gem and add to the application's Gemfile by executing:
