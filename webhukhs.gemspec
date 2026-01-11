@@ -9,13 +9,12 @@ Gem::Specification.new do |spec|
   spec.email = ["github@skatkov.com"]
 
   spec.summary = "Webhooks processing engine for Rails applications"
-  spec.description = spec.summary
+  spec.description = "Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process. Supports custom handlers with Webhukhs::BaseHandler and integrates with Rails common error reporter."
   spec.homepage = "https://github.com/skatkov/webhukhs"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/skatkov/webhukhs"
   spec.metadata["changelog_uri"] = "https://github.com/skatkov/webhukhs/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
