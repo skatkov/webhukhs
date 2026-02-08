@@ -5,6 +5,10 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+### Changed
+- ProcessingJob to discard job and report an error on DeserializationError
+- ProcessingJob to handle nil argument gracefully
+
 ## 0.5.0
 
 - Forked from [munster](https://github.com/cheddar-me/munster) and renamed to webhukhs
