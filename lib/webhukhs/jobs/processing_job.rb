@@ -4,8 +4,27 @@ require "active_job/railtie"
 
 module Webhukhs
   class ProcessingJob < ActiveJob::Base
+    class InvalidWebhookArgument < StandardError; end
+
+    discard_on ActiveJob::DeserializationError do |job, error|
+      Rails.error.report(error, context: {
+        job_id: job.job_id,
+        arguments: job.arguments.map(&:inspect)
+      }, severity: :error)
+    end
+
+    discard_on InvalidWebhookArgument do |job, error|
+      Rails.error.report(error, context: {
+        job_id: job.job_id,
+        arguments: job.arguments.map(&:inspect)
+      }, severity: :error)
+    end
+
     def perform(webhook)
-      Rails.error.set_context(webhukhs_handler_module_name: webhook.handler_module_name, **Webhukhs.configuration.error_context)
+      raise InvalidWebhookArgument, "ProcessingJob received nil webhook argument" if webhook.nil?
+      unless webhook.is_a?(Webhukhs::ReceivedWebhook)
+        raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
+      end
 
       webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
       webhook.with_lock do
