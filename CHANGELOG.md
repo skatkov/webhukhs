@@ -5,12 +5,16 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+## 0.6.0
+
 ### Changed
 - ProcessingJob to discard job and report an error on DeserializationError
-- ProcessingJob to handle nil argument gracefully
+- ProcessingJob to handle nil or wrong class argument gracefully
+- Ensure that ID is always generated for ReceivedWebhook model
 
 ## 0.5.0
 
+### Changed
 - Forked from [munster](https://github.com/cheddar-me/munster) and renamed to webhukhs
 - Changed GitHub repository to https://github.com/skatkov/webhukhs
 - Testing against rails 7.1, rails 8.0 and rails 8.1
