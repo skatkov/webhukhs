@@ -9,6 +9,8 @@ module Webhukhs
 
     include StateMachineEnum
 
+    before_create :ensure_id
+
     state_machine_enum :status do |s|
       s.permit_transition(:received, :processing)
       s.permit_transition(:processing, :failed_validation)
@@ -94,6 +96,22 @@ module Webhukhs
 
     def handler
       handler_module_name.constantize.new
+    end
+
+    private
+
+    def ensure_id
+      return if id.present?
+      # let DB auto-increment handle it
+      return if self.class.columns_hash["id"].type == :integer
+
+      self.id = if SecureRandom.respond_to?(:uuid_v7)
+        # Requires Ruby 3.3+. This is preferred approach for time-sortable id's.
+        SecureRandom.uuid_v7
+      else
+        # Ruby < 3.2 fallback - uuid v4
+        SecureRandom.uuid
+      end
     end
   end
 end

@@ -200,4 +200,16 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
       assert_equal "received", webhook.status
     end
   end
+
+  test "ensure_id does not override id for integer primary key columns" do
+    webhook = Webhukhs::ReceivedWebhook.create!(
+      handler_event_id: SecureRandom.uuid,
+      handler_module_name: "WebhookTestHandler",
+      status: "received",
+      body: {isValid: true}.to_json
+    )
+
+    assert_kind_of Integer, webhook.id
+    assert webhook.id > 0
+  end
 end
