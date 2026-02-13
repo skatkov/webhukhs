@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ["github@skatkov.com"]
 
   spec.summary = "Webhooks processing engine for Rails applications"
-  spec.description = "Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes webhook in async process. Supports custom handlers with Webhukhs::BaseHandler and integrates with Rails common error reporter."
+  spec.description = "Webhukhs is a Rails engine for processing webhooks from various services. Engine saves webhook in database first and later processes in async job."
   spec.homepage = "https://github.com/skatkov/webhukhs"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
