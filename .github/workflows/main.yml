@@ -24,6 +24,7 @@ jobs:
           - "7.1"
           - "8.0"
           - "8.1"
+          - "master"
       fail-fast: false
 
     steps:

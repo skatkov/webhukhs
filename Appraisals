@@ -11,3 +11,7 @@ end
 appraise "rails-8.0" do
   gem "rails", "~> 8.0"
 end
+
+appraise "rails-master" do
+  gem "rails", github: "rails/rails", branch: "main"
+end
