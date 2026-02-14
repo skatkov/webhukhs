@@ -3,30 +3,30 @@
 require "active_job/railtie"
 
 module Webhukhs
+  # Background job that validates and processes a persisted webhook.
   class ProcessingJob < ActiveJob::Base
+    # Raised when the job receives an invalid webhook argument.
     class InvalidWebhookArgument < StandardError; end
 
-    discard_on ActiveJob::DeserializationError do |job, error|
+    discard_on ActiveJob::DeserializationError, InvalidWebhookArgument do |job, error|
       Rails.error.report(error, context: {
         job_id: job.job_id,
         arguments: job.arguments.map(&:inspect)
       }, severity: :error)
     end
 
-    discard_on InvalidWebhookArgument do |job, error|
-      Rails.error.report(error, context: {
-        job_id: job.job_id,
-        arguments: job.arguments.map(&:inspect)
-      }, severity: :error)
-    end
-
+    # Runs webhook validation and processing lifecycle.
+    #
+    # @param webhook [Webhukhs::ReceivedWebhook] webhook record to process
+    # @return [void]
     def perform(webhook)
-      raise InvalidWebhookArgument, "ProcessingJob received nil webhook argument" if webhook.nil?
+      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
+
+      raise InvalidWebhookArgument, "#{webhook_details_for_logs} ProcessingJob received nil webhook argument" if webhook.nil?
       unless webhook.is_a?(Webhukhs::ReceivedWebhook)
-        raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
+        raise InvalidWebhookArgument, "#{webhook_details_for_logs} ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
 
-      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
       webhook.with_lock do
         unless webhook.received?
           logger.info { "#{webhook_details_for_logs} is being processed in a different job or has been processed already, skipping." }

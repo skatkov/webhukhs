@@ -3,6 +3,7 @@
 require "state_machine_enum"
 
 module Webhukhs
+  # ActiveRecord model that stores received webhook requests for async processing.
   class ReceivedWebhook < ActiveRecord::Base
     self.implicit_order_column = "created_at"
     self.table_name = "received_webhooks"
@@ -25,7 +26,9 @@ module Webhukhs
     end
 
     # Store the pertinent data from an ActionDispatch::Request into the webhook.
-    # @param [ActionDispatch::Request]
+    #
+    # @param action_dispatch_request [ActionDispatch::Request] request to persist
+    # @return [void]
     def request=(action_dispatch_request)
       # Filter out all Rack-specific headers such as "rack.input" and the like. We are
       # only interested in the actual HTTP headers presented by the webserver. Mostly...
@@ -94,12 +97,18 @@ module Webhukhs
       ActionDispatch::Request.new(request_headers.merge!("rack.input" => StringIO.new(body.to_s.b)))
     end
 
+    # Instantiates the configured handler for this webhook.
+    #
+    # @return [Webhukhs::BaseHandler]
     def handler
       handler_module_name.constantize.new
     end
 
     private
 
+    # Assigns a generated id when database does not auto-increment ids.
+    #
+    # @return [void]
     def ensure_id
       return if id.present?
       # let DB auto-increment handle it

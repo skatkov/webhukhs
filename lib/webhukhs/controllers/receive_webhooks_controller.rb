@@ -1,13 +1,19 @@
 # frozen_string_literal: true
 
 module Webhukhs
+  # Receives incoming webhook HTTP requests and dispatches handlers.
   class ReceiveWebhooksController < ActionController::API
+    # Raised when a configured handler exists but is currently inactive.
     class HandlerInactive < StandardError
     end
 
+    # Raised when no handler is configured for the service id.
     class UnknownHandler < StandardError
     end
 
+    # Persists and schedules processing for an incoming webhook request.
+    #
+    # @return [void]
     def create
       Rails.error.set_context(**Webhukhs.configuration.error_context)
       handler = lookup_handler(service_id)
@@ -27,15 +33,28 @@ module Webhukhs
       render_error_with_status("Internal error (#{e})")
     end
 
+    # Extracts webhook service identifier from route parameters.
+    #
+    # @return [String]
     def service_id
       params.require(:service_id)
     end
 
+    # Renders standardized error response payload.
+    #
+    # @param message_str [String] human-readable error message
+    # @param status [Symbol] HTTP response status
+    # @return [void]
     def render_error_with_status(message_str, status: :ok)
       json = {ok: false, error: message_str}.to_json
       render(json: json, status: status)
     end
 
+    # Resolves a handler class from configuration for a service id.
+    #
+    # @param service_id_str [String] service identifier from request path
+    # @return [Webhukhs::BaseHandler]
+    # @raise [UnknownHandler] when no active handler is configured for service id
     def lookup_handler(service_id_str)
       active_handlers = Webhukhs.configuration.active_handlers.with_indifferent_access
       # The config can specify a mapping of:

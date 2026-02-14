@@ -8,3 +8,4 @@ gemspec
 gem "sqlite3"
 gem "sprockets-rails"
 gem "appraisal"
+gem "yard-lint"

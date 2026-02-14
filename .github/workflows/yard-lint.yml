@@ -1,0 +1,20 @@
+name: YARD Lint
+
+on: [pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for --diff
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Run YARD-Lint on changed files
+        run: bundle exec yard-lint lib/ --diff origin/${{ github.base_ref }}
