@@ -20,12 +20,12 @@ module Webhukhs
     # @param webhook [Webhukhs::ReceivedWebhook] webhook record to process
     # @return [void]
     def perform(webhook)
-      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
-
-      raise InvalidWebhookArgument, "#{webhook_details_for_logs} ProcessingJob received nil webhook argument" if webhook.nil?
+      raise InvalidWebhookArgument, "ProcessingJob received nil webhook argument" if webhook.nil?
       unless webhook.is_a?(Webhukhs::ReceivedWebhook)
-        raise InvalidWebhookArgument, "#{webhook_details_for_logs} ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
+        raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
+
+      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
 
       webhook.with_lock do
         unless webhook.received?
@@ -45,7 +45,7 @@ module Webhukhs
         webhook.failed_validation!
       end
     rescue => e
-      webhook.error!
+      webhook.error! if webhook.respond_to?(:error!)
       raise e
     end
   end
