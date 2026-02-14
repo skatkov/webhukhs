@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}, Rails ${{ matrix.rails }}
+    env:
+      BUNDLE_PATH: vendor/bundle
+      BUNDLE_DISABLE_SHARED_GEMS: "true"
     strategy:
       matrix:
         ruby:
