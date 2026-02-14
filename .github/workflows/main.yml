@@ -14,8 +14,9 @@ jobs:
     strategy:
       matrix:
         ruby:
+          - "3.3"
           - "3.4"
-          # - "4.0"
+          - "4.0"
         rails:
           - "7.1"
           - "8.0"
