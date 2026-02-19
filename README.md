@@ -35,9 +35,9 @@ Webhukhs.configure do |config|
 end
 ```
 
-## Example handlers
-
-We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. `example` folder contains a demo app with engine fully configured.
+## Examples
+- `example` folder contains a demo app with engine fully configured.
+- We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. 
 
 ## Requirements
 
