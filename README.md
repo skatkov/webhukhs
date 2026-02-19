@@ -28,9 +28,11 @@ mount Webhukhs::Engine, at: "/webhooks"
 Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. We recommend `app/webhooks`, but any place known to autoloading will do. Add these to your `webhukhs.rb` config file:
 
 ```ruby
-config.active_handlers = {
-  "example" => "ExampleHandler"
-}
+Webhukhs.configure do |config|
+  config.active_handlers = {
+    "test-handler" => "WebhookTestHandler"
+  }
+end
 ```
 
 ## Example handlers
