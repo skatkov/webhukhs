@@ -35,7 +35,7 @@ config.active_handlers = {
 
 ## Example handlers
 
-We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. `example` folder contains a demo app with gem enabled.
+We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. `example` folder contains a demo app with engine fully configured.
 
 ## Requirements
 
