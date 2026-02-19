@@ -25,7 +25,7 @@ Mount webhukhs engine in your routes.
 mount Webhukhs::Engine, at: "/webhooks"
 ```
 
-Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. Place it somewhere where Rails autoloading can find it, and add it to your `webhukhs.rb` config file:
+Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. We recommend `app/webhooks`, but any place known to autoloading will do. Add these to your `webhukhs.rb` config file:
 
 ```ruby
 config.active_handlers = {
@@ -35,7 +35,7 @@ config.active_handlers = {
 
 ## Example handlers
 
-We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`.
+We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. `example` folder contains a demo app with gem enabled.
 
 ## Requirements
 
