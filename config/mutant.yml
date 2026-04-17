@@ -1,0 +1,25 @@
+usage: opensource
+
+integration:
+  name: minitest
+
+includes:
+  - lib
+  - test
+
+environment_variables:
+  RAILS_ENV: test
+
+requires:
+  - ./test/test_app.rb
+
+matcher:
+  subjects:
+    - Webhukhs*
+
+coverage_criteria:
+  timeout: true
+  process_abort: true
+
+hooks:
+- ./config/mutant.rb

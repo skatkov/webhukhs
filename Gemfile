@@ -9,3 +9,6 @@ gem "sqlite3"
 gem "sprockets-rails"
 gem "appraisal"
 gem "yard-lint"
+gem "mutant"
+gem "mutant-minitest"
+gem "simplecov", "~> 0.22", require: false
