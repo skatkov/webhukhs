@@ -4,6 +4,8 @@ require "test_helper"
 require_relative "test_app"
 
 class ProcessingJobTest < ActiveJob::TestCase
+  cover "Webhukhs::ProcessingJob*"
+
   teardown { Webhukhs::ReceivedWebhook.delete_all }
 
   test "discards job and reports error when webhook argument is nil" do
