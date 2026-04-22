@@ -21,32 +21,25 @@ module Webhukhs
     # @return [void]
     def perform(webhook)
       raise InvalidWebhookArgument, "ProcessingJob received nil webhook argument" if webhook.nil?
-      unless webhook.is_a?(Webhukhs::ReceivedWebhook)
+      unless webhook.instance_of?(ReceivedWebhook)
         raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
 
-      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
-
       webhook.with_lock do
-        unless webhook.received?
-          logger.info { "#{webhook_details_for_logs} is being processed in a different job or has been processed already, skipping." }
-          return
-        end
+        return unless webhook.received?
+
         webhook.processing!
       end
 
       if webhook.handler.valid?(webhook.request)
-        logger.info { "#{webhook_details_for_logs} starting to process" }
         webhook.handler.process(webhook)
         webhook.processed! if webhook.processing?
-        logger.info { "#{webhook_details_for_logs} processed" }
       else
-        logger.info { "#{webhook_details_for_logs} did not pass validation by the handler. Marking it `failed_validation`." }
         webhook.failed_validation!
       end
-    rescue => e
+    rescue StandardError
       webhook.error! if webhook.respond_to?(:error!)
-      raise e
+      raise
     end
   end
 end
