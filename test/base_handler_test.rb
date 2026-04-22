@@ -58,34 +58,18 @@ class BaseHandlerTest < ActiveSupport::TestCase
     )
     webhook = Object.new
     handler = HandleProbeHandler.new
-    received_webhook_singleton_class = Webhukhs::ReceivedWebhook.singleton_class
 
     def webhook.save!
     end
 
-    silence_warnings do
-      received_webhook_singleton_class.class_eval do
-        alias_method :__original_new_for_base_handler_test__, :new
+    with_overridden_singleton_method(Webhukhs::ReceivedWebhook, :new, ->(**attributes) {
+      captured_attributes = attributes
+      webhook
+    }) do
+      handler.handle(request)
 
-        define_method(:new) do |**attributes|
-          captured_attributes = attributes
-          webhook
-        end
-      end
-    end
-
-    handler.handle(request)
-
-    assert_same webhook, handler.enqueued_webhook
-    assert_equal "HandleProbeHandler", captured_attributes.fetch(:handler_module_name)
-  ensure
-    if received_webhook_singleton_class.method_defined?(:__original_new_for_base_handler_test__)
-      silence_warnings do
-        received_webhook_singleton_class.class_eval do
-          alias_method :new, :__original_new_for_base_handler_test__
-          remove_method :__original_new_for_base_handler_test__
-        end
-      end
+      assert_same webhook, handler.enqueued_webhook
+      assert_equal "HandleProbeHandler", captured_attributes.fetch(:handler_module_name)
     end
   end
 
