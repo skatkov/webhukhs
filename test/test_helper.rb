@@ -58,4 +58,41 @@ class ActiveSupport::TestCase
 
     retval
   end
+
+  def with_overridden_singleton_method(target, method_name, implementation, &block)
+    with_overridden_singleton_methods(target, {method_name => implementation}, &block)
+  end
+
+  def with_overridden_singleton_methods(target, methods)
+    singleton_class = target.singleton_class
+    original_names = methods.keys.each_with_index.to_h do |name, index|
+      sanitized_name = name.to_s.gsub(/[^a-zA-Z0-9_]/, "_")
+      [name, :"__original_#{sanitized_name}_for_test_#{object_id}_#{index}"]
+    end
+
+    silence_warnings do
+      singleton_class.class_eval do
+        original_names.each do |name, original_name|
+          alias_method original_name, name
+        end
+
+        methods.each do |name, override|
+          define_method(name, &override)
+        end
+      end
+    end
+
+    yield
+  ensure
+    silence_warnings do
+      singleton_class.class_eval do
+        original_names.each do |name, original_name|
+          next unless method_defined?(original_name)
+
+          alias_method name, original_name
+          remove_method original_name
+        end
+      end
+    end
+  end
 end

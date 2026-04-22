@@ -6,12 +6,11 @@ class StringIdReceivedWebhook < Webhukhs::ReceivedWebhook
   self.table_name = "string_id_received_webhooks"
 end
 
-class ReceivedWebhookTest < ActiveSupport::TestCase
-  cover "Webhukhs::ReceivedWebhook*"
+unless ActiveRecord::Base.connection.data_source_exists?("string_id_received_webhooks")
+  original_migration_verbose = ActiveRecord::Migration.verbose
+  ActiveRecord::Migration.verbose = false
 
-  setup do
-    next if ActiveRecord::Base.connection.data_source_exists?("string_id_received_webhooks")
-
+  begin
     ActiveRecord::Schema.define do
       create_table "string_id_received_webhooks", id: :string, force: true do |t|
         t.string "handler_event_id", null: false
@@ -23,7 +22,13 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
         t.datetime "updated_at", null: false
       end
     end
+  ensure
+    ActiveRecord::Migration.verbose = original_migration_verbose
   end
+end
+
+class ReceivedWebhookTest < ActiveSupport::TestCase
+  cover "Webhukhs::ReceivedWebhook*"
 
   teardown do
     Webhukhs::ReceivedWebhook.delete_all
@@ -70,14 +75,14 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
     webhook = Webhukhs::ReceivedWebhook.new
     captured_body = nil
 
-    webhook.define_singleton_method(:write_attribute) do |name, value|
+    with_overridden_singleton_method(webhook, :write_attribute, ->(name, value) {
       captured_body = value if name == "body"
+    }) do
+      webhook.request = request
+
+      assert_equal "payload".b, captured_body
+      assert_equal Encoding::ASCII_8BIT, captured_body.encoding
     end
-
-    webhook.request = request
-
-    assert_equal "payload".b, captured_body
-    assert_equal Encoding::ASCII_8BIT, captured_body.encoding
   end
 
   test "request rejects oversized bodies and rewinds the body io" do
@@ -123,18 +128,92 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
 
   test "request reader coerces the reconstructed body to binary" do
     webhook = Webhukhs::ReceivedWebhook.new
-    webhook.define_singleton_method(:body) { "payload" }
-    webhook.define_singleton_method(:request_headers) do
-      {
-        "CONTENT_TYPE" => "application/json",
-        "action_dispatch.request.path_parameters" => {}
+
+    request_headers = {
+      "CONTENT_TYPE" => "application/json",
+      "action_dispatch.request.path_parameters" => {}
+    }
+
+    with_overridden_singleton_methods(webhook, {
+      body: -> { "payload" },
+      request_headers: -> {
+        request_headers
       }
+    }) do
+      request_body = webhook.request.body.read
+
+      assert_equal "payload".b, request_body.b
+      assert_equal Encoding::ASCII_8BIT, request_body.encoding
     end
+  end
 
-    request_body = webhook.request.body.read
+  test "assigns uuid ids for string primary keys" do
+    with_overridden_singleton_methods(SecureRandom, {
+      respond_to?: ->(method_name, include_all = false) {
+        method_name == :uuid_v7 || super(method_name, include_all)
+      },
+      uuid_v7: -> {
+        "00000000-0000-7000-8000-000000000001"
+      },
+      uuid: -> {
+        "00000000-0000-4000-8000-000000000002"
+      }
+    }) do
+      webhook = StringIdReceivedWebhook.create!(
+        handler_event_id: "generated-id-event",
+        handler_module_name: "WebhookTestHandler",
+        status: "received",
+        body: {}.to_json,
+        request_headers: {}
+      )
 
-    assert_equal "payload".b, request_body.b
-    assert_equal Encoding::ASCII_8BIT, request_body.encoding
+      assert_equal "00000000-0000-7000-8000-000000000001", webhook.id
+    end
+  end
+
+  test "falls back to uuid when uuid_v7 is unavailable" do
+    with_overridden_singleton_methods(SecureRandom, {
+      respond_to?: ->(method_name, include_all = false) {
+        method_name == :uuid_v7 ? false : super(method_name, include_all)
+      },
+      uuid_v7: -> {
+        raise "uuid_v7 should not be called when unavailable"
+      },
+      uuid: -> {
+        "00000000-0000-4000-8000-000000000002"
+      }
+    }) do
+      webhook = StringIdReceivedWebhook.create!(
+        handler_event_id: "fallback-id-event",
+        handler_module_name: "WebhookTestHandler",
+        status: "received",
+        body: {}.to_json,
+        request_headers: {}
+      )
+
+      assert_equal "00000000-0000-4000-8000-000000000002", webhook.id
+    end
+  end
+
+  test "does not call uuid generation for integer primary keys" do
+    with_overridden_singleton_methods(SecureRandom, {
+      uuid_v7: -> {
+        raise "uuid_v7 should not be called for integer primary keys"
+      },
+      uuid: -> {
+        raise "uuid should not be called for integer primary keys"
+      }
+    }) do
+      webhook = Webhukhs::ReceivedWebhook.create!(
+        handler_event_id: "integer-id-event",
+        handler_module_name: "WebhookTestHandler",
+        status: "received",
+        body: {}.to_json,
+        request_headers: {}
+      )
+
+      assert_kind_of Integer, webhook.id
+    end
   end
 
   test "does not overwrite explicitly assigned string ids" do
@@ -163,137 +242,4 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
     assert_match(/\A[0-9a-f\-]{36}\z/, webhook.id)
   end
 
-  test "assigns uuid ids for string primary keys" do
-    secure_random_singleton_class = SecureRandom.singleton_class
-
-    silence_warnings do
-      secure_random_singleton_class.class_eval do
-        alias_method :__original_respond_to_for_received_webhook_test__, :respond_to?
-        alias_method :__original_uuid_for_received_webhook_v7_test__, :uuid
-        alias_method :__original_uuid_v7_for_received_webhook_test__, :uuid_v7
-
-        define_method(:respond_to?) do |method_name, include_all = false|
-          method_name == :uuid_v7 || __original_respond_to_for_received_webhook_test__(method_name, include_all)
-        end
-
-        define_method(:uuid_v7) do
-          "00000000-0000-7000-8000-000000000001"
-        end
-
-        define_method(:uuid) do
-          "00000000-0000-4000-8000-000000000002"
-        end
-      end
-    end
-
-    webhook = StringIdReceivedWebhook.create!(
-      handler_event_id: "generated-id-event",
-      handler_module_name: "WebhookTestHandler",
-      status: "received",
-      body: {}.to_json,
-      request_headers: {}
-    )
-
-    assert_equal "00000000-0000-7000-8000-000000000001", webhook.id
-  ensure
-    if secure_random_singleton_class.method_defined?(:__original_respond_to_for_received_webhook_test__)
-      silence_warnings do
-        secure_random_singleton_class.class_eval do
-          alias_method :respond_to?, :__original_respond_to_for_received_webhook_test__
-          alias_method :uuid, :__original_uuid_for_received_webhook_v7_test__
-          alias_method :uuid_v7, :__original_uuid_v7_for_received_webhook_test__
-          remove_method :__original_respond_to_for_received_webhook_test__
-          remove_method :__original_uuid_for_received_webhook_v7_test__
-          remove_method :__original_uuid_v7_for_received_webhook_test__
-        end
-      end
-    end
-  end
-
-  test "falls back to uuid when uuid_v7 is unavailable" do
-    secure_random_singleton_class = SecureRandom.singleton_class
-
-    silence_warnings do
-      secure_random_singleton_class.class_eval do
-        alias_method :__original_respond_to_for_received_webhook_fallback_test__, :respond_to?
-        alias_method :__original_uuid_for_received_webhook_fallback_test__, :uuid
-        alias_method :__original_uuid_v7_for_received_webhook_fallback_test__, :uuid_v7
-
-        define_method(:respond_to?) do |method_name, include_all = false|
-          method_name == :uuid_v7 ? false : __original_respond_to_for_received_webhook_fallback_test__(method_name, include_all)
-        end
-
-        define_method(:uuid_v7) do
-          raise "uuid_v7 should not be called when unavailable"
-        end
-
-        define_method(:uuid) do
-          "00000000-0000-4000-8000-000000000002"
-        end
-      end
-    end
-
-    webhook = StringIdReceivedWebhook.create!(
-      handler_event_id: "fallback-id-event",
-      handler_module_name: "WebhookTestHandler",
-      status: "received",
-      body: {}.to_json,
-      request_headers: {}
-    )
-
-    assert_equal "00000000-0000-4000-8000-000000000002", webhook.id
-  ensure
-    if secure_random_singleton_class.method_defined?(:__original_respond_to_for_received_webhook_fallback_test__)
-      silence_warnings do
-        secure_random_singleton_class.class_eval do
-          alias_method :respond_to?, :__original_respond_to_for_received_webhook_fallback_test__
-          alias_method :uuid, :__original_uuid_for_received_webhook_fallback_test__
-          alias_method :uuid_v7, :__original_uuid_v7_for_received_webhook_fallback_test__
-          remove_method :__original_respond_to_for_received_webhook_fallback_test__
-          remove_method :__original_uuid_for_received_webhook_fallback_test__
-          remove_method :__original_uuid_v7_for_received_webhook_fallback_test__
-        end
-      end
-    end
-  end
-
-  test "does not call uuid generation for integer primary keys" do
-    secure_random_singleton_class = SecureRandom.singleton_class
-
-    silence_warnings do
-      secure_random_singleton_class.class_eval do
-        alias_method :__original_uuid_v7_for_received_webhook_integer_test__, :uuid_v7
-        alias_method :__original_uuid_for_received_webhook_test__, :uuid
-
-        define_method(:uuid_v7) do
-          raise "uuid_v7 should not be called for integer primary keys"
-        end
-
-        define_method(:uuid) do
-          raise "uuid should not be called for integer primary keys"
-        end
-      end
-    end
-
-    webhook = Webhukhs::ReceivedWebhook.create!(
-      handler_event_id: "integer-id-event",
-      handler_module_name: "WebhookTestHandler",
-      status: "received",
-      body: {}.to_json,
-      request_headers: {}
-    )
-
-    assert_kind_of Integer, webhook.id
-  ensure
-    if secure_random_singleton_class.method_defined?(:__original_uuid_for_received_webhook_test__)
-      silence_warnings do
-        secure_random_singleton_class.class_eval do
-          alias_method :uuid_v7, :__original_uuid_v7_for_received_webhook_integer_test__
-          alias_method :uuid, :__original_uuid_for_received_webhook_test__
-          remove_method :__original_uuid_v7_for_received_webhook_integer_test__
-          remove_method :__original_uuid_for_received_webhook_test__
-        end
-      end
-    end
-  end
 end
