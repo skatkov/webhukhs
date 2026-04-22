@@ -43,8 +43,8 @@ class BaseHandlerTest < ActiveSupport::TestCase
     first_id = handler.extract_event_id_from_request(nil)
     second_id = handler.extract_event_id_from_request(nil)
 
-    assert_match(/\A[0-9a-f\-]{36}\z/, first_id)
-    assert_match(/\A[0-9a-f\-]{36}\z/, second_id)
+    assert_match(/\A[0-9a-f-]{36}\z/, first_id)
+    assert_match(/\A[0-9a-f-]{36}\z/, second_id)
     refute_equal first_id, second_id
   end
 
