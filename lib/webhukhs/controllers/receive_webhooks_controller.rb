@@ -27,8 +27,8 @@ module Webhukhs
       Rails.error.report(e, handled: true, severity: :error)
       render_error_with_status("Webhook handler #{service_id.inspect} is inactive", status: :service_unavailable)
     rescue => e
-      raise e unless handler
-      raise e if handler.expose_errors_to_sender?
+      raise unless handler
+      raise if handler.expose_errors_to_sender?
       Rails.error.report(e, handled: true, severity: :error)
       render_error_with_status("Internal error (#{e})")
     end
@@ -45,8 +45,8 @@ module Webhukhs
     # @param message_str [String] human-readable error message
     # @param status [Symbol] HTTP response status
     # @return [void]
-    def render_error_with_status(message_str, status: :ok)
-      json = {ok: false, error: message_str}.to_json
+    def render_error_with_status(message_str, status: nil)
+      json = {ok: false, error: message_str}
       render(json: json, status: status)
     end
 

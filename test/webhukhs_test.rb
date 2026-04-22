@@ -4,6 +4,13 @@ require "test_helper"
 require_relative "test_app"
 
 class TestWebhukhs < ActionDispatch::IntegrationTest
+  cover "Webhukhs*"
+  cover "Webhukhs::BaseHandler*"
+  cover "Webhukhs::Configuration*"
+  cover "Webhukhs::ProcessingJob*"
+  cover "Webhukhs::ReceiveWebhooksController*"
+  cover "Webhukhs::ReceivedWebhook*"
+
   teardown { Webhukhs::ReceivedWebhook.delete_all }
 
   def test_that_it_has_a_version_number
@@ -28,6 +35,57 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     test(msg) { skip }
   end
 
+  test "returns a memoized configuration object and yields it to configure" do
+    original_configuration = Webhukhs.instance_variable_get(:@configuration)
+    Webhukhs.remove_instance_variable(:@configuration) if Webhukhs.instance_variable_defined?(:@configuration)
+
+    configuration = Webhukhs.configuration
+
+    assert_instance_of Webhukhs::Configuration, configuration
+    assert_same configuration, Webhukhs.configuration
+
+    yielded = nil
+    Webhukhs.configure { |config| yielded = config }
+
+    assert_same configuration, yielded
+  ensure
+    Webhukhs.instance_variable_set(:@configuration, original_configuration)
+  end
+
+  test "applies the configured error context before handling requests" do
+    original_error_context = Webhukhs.configuration.error_context
+    captured_context = nil
+    error_reporter_singleton_class = Rails.error.singleton_class
+
+    Webhukhs.configuration.error_context = {component: "webhooks"}
+
+    silence_warnings do
+      error_reporter_singleton_class.class_eval do
+        alias_method :__original_set_context_for_webhukhs_test__, :set_context
+
+        define_method(:set_context) do |**context|
+          captured_context = context
+        end
+      end
+    end
+
+    post "/webhukhs/test", params: {isValid: false, outputToFilename: "/tmp/unused"}.to_json, headers: {"CONTENT_TYPE" => "application/json"}
+
+    assert_response 200
+    assert_equal({component: "webhooks"}, captured_context)
+  ensure
+    Webhukhs.configuration.error_context = original_error_context
+
+    if error_reporter_singleton_class.method_defined?(:__original_set_context_for_webhukhs_test__)
+      silence_warnings do
+        error_reporter_singleton_class.class_eval do
+          alias_method :set_context, :__original_set_context_for_webhukhs_test__
+          remove_method :__original_set_context_for_webhukhs_test__
+        end
+      end
+    end
+  end
+
   test "ensure webhook is processed only once during creation" do
     tf = Tempfile.new
     body = {isValid: true, outputToFilename: tf.path}
@@ -36,6 +94,7 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_enqueued_jobs 1, only: Webhukhs::ProcessingJob do
       post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
       assert_response 200
+      assert_equal({"ok" => true, "error" => nil}, response.parsed_body)
     end
   end
 
@@ -133,23 +192,97 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
   end
 
   test "raises an error if the service_id is not known" do
+    captured_report = nil
+    error_reporter_singleton_class = Rails.error.singleton_class
+
+    silence_warnings do
+      error_reporter_singleton_class.class_eval do
+        alias_method :__original_report_for_webhukhs_test__, :report
+
+        define_method(:report) do |error, **options|
+          captured_report = {error: error, options: options}
+        end
+      end
+    end
+
     post "/webhukhs/missing_service", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+
     assert_response 404
+    assert_equal "No handler found for \"missing_service\"", response.parsed_body["error"]
+    assert_equal Webhukhs::ReceiveWebhooksController::UnknownHandler, captured_report.fetch(:error).class
+    assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
+  ensure
+    if error_reporter_singleton_class.method_defined?(:__original_report_for_webhukhs_test__)
+      silence_warnings do
+        error_reporter_singleton_class.class_eval do
+          alias_method :report, :__original_report_for_webhukhs_test__
+          remove_method :__original_report_for_webhukhs_test__
+        end
+      end
+    end
   end
 
   test "returns a 503 when a handler is inactive" do
+    captured_report = nil
+    error_reporter_singleton_class = Rails.error.singleton_class
+
+    silence_warnings do
+      error_reporter_singleton_class.class_eval do
+        alias_method :__original_report_for_inactive_handler_test__, :report
+
+        define_method(:report) do |error, **options|
+          captured_report = {error: error, options: options}
+        end
+      end
+    end
+
     post "/webhukhs/inactive", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
     assert_response 503
     assert_equal 'Webhook handler "inactive" is inactive', response.parsed_body["error"]
+    assert_equal Webhukhs::ReceiveWebhooksController::HandlerInactive, captured_report.fetch(:error).class
+    assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
+  ensure
+    if error_reporter_singleton_class.method_defined?(:__original_report_for_inactive_handler_test__)
+      silence_warnings do
+        error_reporter_singleton_class.class_eval do
+          alias_method :report, :__original_report_for_inactive_handler_test__
+          remove_method :__original_report_for_inactive_handler_test__
+        end
+      end
+    end
   end
 
   test "returns a 200 status and error message if the handler does not expose errors" do
+    captured_report = nil
+    error_reporter_singleton_class = Rails.error.singleton_class
+
+    silence_warnings do
+      error_reporter_singleton_class.class_eval do
+        alias_method :__original_report_for_concealed_error_test__, :report
+
+        define_method(:report) do |error, **options|
+          captured_report = {error: error, options: options}
+        end
+      end
+    end
+
     post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
     assert_response 200
     assert_equal false, response.parsed_body["ok"]
-    assert response.parsed_body["error"]
+    assert_equal "Internal error (oops)", response.parsed_body["error"]
+    assert_equal RuntimeError, captured_report.fetch(:error).class
+    assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
+  ensure
+    if error_reporter_singleton_class.method_defined?(:__original_report_for_concealed_error_test__)
+      silence_warnings do
+        error_reporter_singleton_class.class_eval do
+          alias_method :report, :__original_report_for_concealed_error_test__
+          remove_method :__original_report_for_concealed_error_test__
+        end
+      end
+    end
   end
 
   test "returns a 500 status and error message if the handler does not expose errors" do
@@ -158,6 +291,43 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_response 500
     # The response generation in this case is done by Rails, through the
     # common Rails error page
+  end
+
+  test "re-raises lookup errors before a handler has been assigned" do
+    original_active_handlers = Webhukhs.configuration.active_handlers
+    Webhukhs.configuration.active_handlers = original_active_handlers.merge(broken: "MissingHandler")
+
+    post "/webhukhs/broken", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+
+    assert_response 500
+    assert_includes response.body, "NameError"
+    assert_includes response.body, "MissingHandler"
+  ensure
+    Webhukhs.configuration.active_handlers = original_active_handlers
+  end
+
+  test "re-raises the original error when lookup fails before assigning a handler" do
+    controller = Webhukhs::ReceiveWebhooksController.new
+    original_error = NameError.new("uninitialized constant MissingHandler")
+
+    controller.define_singleton_method(:service_id) { "broken" }
+    controller.define_singleton_method(:lookup_handler) { |_service_id| raise original_error }
+
+    raised_error = assert_raises(NameError) { controller.create }
+
+    assert_same original_error, raised_error
+  end
+
+  test "accepts handlers configured as class constants" do
+    original_active_handlers = Webhukhs.configuration.active_handlers
+    Webhukhs.configuration.active_handlers = original_active_handlers.merge(class_handler: WebhookTestHandler)
+
+    post "/webhukhs/class_handler", params: {isValid: false, outputToFilename: "/tmp/unused"}.to_json, headers: {"CONTENT_TYPE" => "application/json"}
+
+    assert_response 200
+    assert_equal({"ok" => true, "error" => nil}, response.parsed_body)
+  ensure
+    Webhukhs.configuration.active_handlers = original_active_handlers
   end
 
   test "deduplicates received webhooks based on the event ID" do

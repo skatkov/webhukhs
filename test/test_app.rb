@@ -5,12 +5,26 @@ require "action_pack"
 require "action_controller"
 require "rails"
 
-database = "development.sqlite3"
-ENV["DATABASE_URL"] = "sqlite3:#{database}"
-ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: database)
-ActiveRecord::Base.logger = Logger.new(nil)
-
 module Test
+  DEFAULT_DATABASE_PATH = File.expand_path("development.sqlite3", __dir__)
+  DEFAULT_DATABASE_URL = "sqlite3:#{DEFAULT_DATABASE_PATH}"
+
+  def self.database_url
+    ENV.fetch("DATABASE_URL", DEFAULT_DATABASE_URL)
+  end
+
+  def self.database_path
+    File.expand_path(database_url.delete_prefix("sqlite3:"))
+  end
+
+  def self.establish_database_connection
+    database = database_path
+
+    ENV["DATABASE_URL"] = database_url
+    ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: database)
+    ActiveRecord::Base.logger = Logger.new(nil)
+  end
+
   def self.define_test_schema
     ActiveRecord::Schema.define do
       create_table "received_webhooks", force: :cascade do |t|
@@ -28,6 +42,7 @@ module Test
   end
 end
 
+Test.establish_database_connection
 Test.define_test_schema
 
 require_relative "../lib/webhukhs"

@@ -32,8 +32,8 @@ module Webhukhs
     def request=(action_dispatch_request)
       # Filter out all Rack-specific headers such as "rack.input" and the like. We are
       # only interested in the actual HTTP headers presented by the webserver. Mostly...
-      headers = action_dispatch_request.env.filter_map do |(header_name, header_value)|
-        if header_name.is_a?(String) && header_name.upcase == header_name && header_value.is_a?(String)
+      headers = action_dispatch_request.env.filter_map do |header_name, header_value|
+        if header_name.instance_of?(String) && header_name.upcase == header_name && header_value.instance_of?(String)
           [header_name, header_value]
         end
       end.to_h
@@ -50,10 +50,10 @@ module Webhukhs
       # Verify the request body is not too large
       request_body_io = action_dispatch_request.env.fetch("rack.input")
       if request_body_io.size > Webhukhs.configuration.request_body_size_limit
-        raise "Cannot accept the webhook as the request body is larger than #{limit} bytes"
+        raise "Cannot accept the webhook as the request body is larger than #{Webhukhs.configuration.request_body_size_limit} bytes"
       end
 
-      write_attribute("body", request_body_io.read.force_encoding(Encoding::BINARY))
+      write_attribute("body", request_body_io.read.b)
       write_attribute("request_headers", headers)
     ensure
       request_body_io.rewind
@@ -94,7 +94,7 @@ module Webhukhs
     #
     # @return [ActionDispatch::Request]
     def request
-      ActionDispatch::Request.new(request_headers.merge!("rack.input" => StringIO.new(body.to_s.b)))
+      ActionDispatch::Request.new(request_headers.merge("rack.input" => StringIO.new(body.b)))
     end
 
     # Instantiates the configured handler for this webhook.
@@ -112,13 +112,11 @@ module Webhukhs
     def ensure_id
       return if id.present?
       # let DB auto-increment handle it
-      return if self.class.columns_hash["id"].type == :integer
+      return if self.class.columns_hash.fetch("id").type == :integer
 
       self.id = if SecureRandom.respond_to?(:uuid_v7)
-        # Requires Ruby 3.3+. This is preferred approach for time-sortable id's.
         SecureRandom.uuid_v7
       else
-        # Ruby < 3.2 fallback - uuid v4
         SecureRandom.uuid
       end
     end
