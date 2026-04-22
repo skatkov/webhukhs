@@ -174,7 +174,7 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
   test "falls back to uuid when uuid_v7 is unavailable" do
     with_overridden_singleton_methods(SecureRandom, {
       respond_to?: ->(method_name, include_all = false) {
-        method_name == :uuid_v7 ? false : super(method_name, include_all)
+        (method_name == :uuid_v7) ? false : super(method_name, include_all)
       },
       uuid_v7: -> {
         raise "uuid_v7 should not be called when unavailable"
@@ -239,7 +239,6 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
       request_headers: {}
     )
 
-    assert_match(/\A[0-9a-f\-]{36}\z/, webhook.id)
+    assert_match(/\A[0-9a-f-]{36}\z/, webhook.id)
   end
-
 end

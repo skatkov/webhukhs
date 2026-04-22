@@ -37,7 +37,7 @@ module Webhukhs
       else
         webhook.failed_validation!
       end
-    rescue StandardError
+    rescue
       webhook.error! if webhook.respond_to?(:error!)
       raise
     end
