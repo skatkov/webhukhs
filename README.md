@@ -25,7 +25,31 @@ Mount webhukhs engine in your routes.
 mount Webhukhs::Engine, at: "/webhooks"
 ```
 
-Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. We recommend `app/webhooks`, but any place known to autoloading will do. Add these to your `webhukhs.rb` config file:
+Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. We recommend `app/webhooks`, but any place known to autoloading will do.
+
+```ruby
+# app/webhooks/example_handler.rb
+class ExampleHandler < Webhukhs::BaseHandler
+  # Called asynchronously to process a stored webhook.
+  def process(received_webhook)
+    payload = JSON.parse(received_webhook.body, symbolize_names: true)
+    # handle payload...
+  end
+
+  # Optional: verify the request signature before processing.
+  # Return false to mark the webhook as failed_validation.
+  def valid?(action_dispatch_request)
+    action_dispatch_request.headers["X-Secret-Token"] == ENV["EXAMPLE_WEBHOOK_SECRET"]
+  end
+
+  # Optional: use a sender-supplied ID for deduplication.
+  def extract_event_id_from_request(action_dispatch_request)
+    action_dispatch_request.headers["X-Event-Id"] || SecureRandom.uuid
+  end
+end
+```
+
+Add the handler to your `webhukhs.rb` config file:
 
 ```ruby
 Webhukhs.configure do |config|
@@ -35,7 +59,7 @@ Webhukhs.configure do |config|
 end
 ```
 
-Now you will be able to accept we hooks on `/webhooks/example` path.
+Now you will be able to accept webhooks on `/webhooks/example` path.
 
 ## More Examples
 - `example` folder contains a demo app with engine fully configured.
