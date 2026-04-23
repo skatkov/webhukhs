@@ -2,6 +2,19 @@
 
 require "test_helper"
 
+class FailingLookupReceiveWebhooksController < Webhukhs::ReceiveWebhooksController
+  def initialize(error)
+    super()
+    @error = error
+  end
+
+  def service_id = "broken"
+
+  def lookup_handler(_service_id)
+    raise @error
+  end
+end
+
 class TestWebhukhs < ActionDispatch::IntegrationTest
   cover "Webhukhs*"
   cover "Webhukhs::BaseHandler*"
@@ -231,11 +244,8 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
   end
 
   test "re-raises the original error when lookup fails before assigning a handler" do
-    controller = Webhukhs::ReceiveWebhooksController.new
     original_error = NameError.new("uninitialized constant MissingHandler")
-
-    controller.define_singleton_method(:service_id) { "broken" }
-    controller.define_singleton_method(:lookup_handler) { |_service_id| raise original_error }
+    controller = FailingLookupReceiveWebhooksController.new(original_error)
 
     raised_error = assert_raises(NameError) { controller.create }
 
