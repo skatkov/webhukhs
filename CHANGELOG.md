@@ -5,6 +5,13 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+## 0.7.0
+## Added
+- Codebase is fully mutant tested now and test coverage increased
+
+## Changed
+- Codebase was simplified according to mutants
+
 ## 0.6.0
 
 ### Changed
