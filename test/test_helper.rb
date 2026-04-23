@@ -1,6 +1,8 @@
 require_relative "test_app"
 require "rails/test_help"
 require "mutant/minitest/coverage"
+require "active_support/logger"
+require "stringio"
 
 if ENV["SIMPLECOV"]
   require "simplecov"
@@ -63,14 +65,20 @@ class ActiveSupport::TestCase
     with_overridden_singleton_methods(target, {method_name => implementation}, &block)
   end
 
-  def with_captured_info_logs(logger)
+  def with_captured_info_logs(logger_owner)
     messages = []
-
-    with_overridden_singleton_method(logger, :info, ->(message = nil, &block) {
-      messages << (block ? block.call : message)
-    }) do
-      yield messages
+    original_logger = logger_owner.logger
+    test_logger = ActiveSupport::Logger.new(StringIO.new)
+    test_logger.level = Logger::INFO
+    test_logger.formatter = lambda do |_severity, _time, _progname, message|
+      messages << message
+      ""
     end
+
+    logger_owner.logger = test_logger
+    yield messages
+  ensure
+    logger_owner.logger = original_logger
   end
 
   def with_overridden_singleton_methods(target, methods)
