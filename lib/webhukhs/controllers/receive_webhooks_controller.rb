@@ -21,15 +21,15 @@ module Webhukhs
       handler.handle(request)
       render(json: {ok: true, error: nil})
     rescue UnknownHandler => e
-      Rails.error.report(e, handled: true, severity: :error)
+      Rails.error.report(e, severity: :error)
       render_error_with_status("No handler found for #{service_id.inspect}", status: :not_found)
     rescue HandlerInactive => e
-      Rails.error.report(e, handled: true, severity: :error)
+      Rails.error.report(e, severity: :error)
       render_error_with_status("Webhook handler #{service_id.inspect} is inactive", status: :service_unavailable)
     rescue => e
       raise unless handler
       raise if handler.expose_errors_to_sender?
-      Rails.error.report(e, handled: true, severity: :error)
+      Rails.error.report(e, severity: :error)
       render_error_with_status("Internal error (#{e})")
     end
 

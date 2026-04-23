@@ -53,16 +53,16 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
   test "applies the configured error context before handling requests" do
     original_error_context = Webhukhs.configuration.error_context
-    captured_context = nil
 
     Webhukhs.configuration.error_context = {component: "webhooks"}
 
-    with_overridden_singleton_method(Rails.error, :set_context, ->(**context) { captured_context = context }) do
-      post "/webhukhs/test", params: {isValid: false, outputToFilename: "/tmp/unused"}.to_json, headers: {"CONTENT_TYPE" => "application/json"}
+    report = assert_error_reported(RuntimeError) do
+      post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 200
-      assert_equal({component: "webhooks"}, captured_context)
     end
+
+    assert_equal "webhooks", report.context[:component]
   ensure
     Webhukhs.configuration.error_context = original_error_context
   end
@@ -173,49 +173,40 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
   end
 
   test "raises an error if the service_id is not known" do
-    captured_report = nil
-
-    with_overridden_singleton_method(Rails.error, :report, ->(error, **options) {
-      captured_report = {error: error, options: options}
-    }) do
+    report = assert_error_reported(Webhukhs::ReceiveWebhooksController::UnknownHandler) do
       post "/webhukhs/missing_service", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 404
       assert_equal "No handler found for \"missing_service\"", response.parsed_body["error"]
-      assert_equal Webhukhs::ReceiveWebhooksController::UnknownHandler, captured_report.fetch(:error).class
-      assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
     end
+
+    assert_predicate report, :handled?
+    assert_equal :error, report.severity
   end
 
   test "returns a 503 when a handler is inactive" do
-    captured_report = nil
-
-    with_overridden_singleton_method(Rails.error, :report, ->(error, **options) {
-      captured_report = {error: error, options: options}
-    }) do
+    report = assert_error_reported(Webhukhs::ReceiveWebhooksController::HandlerInactive) do
       post "/webhukhs/inactive", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 503
       assert_equal 'Webhook handler "inactive" is inactive', response.parsed_body["error"]
-      assert_equal Webhukhs::ReceiveWebhooksController::HandlerInactive, captured_report.fetch(:error).class
-      assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
     end
+
+    assert_predicate report, :handled?
+    assert_equal :error, report.severity
   end
 
   test "returns a 200 status and error message if the handler does not expose errors" do
-    captured_report = nil
-
-    with_overridden_singleton_method(Rails.error, :report, ->(error, **options) {
-      captured_report = {error: error, options: options}
-    }) do
+    report = assert_error_reported(RuntimeError) do
       post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 200
       assert_equal false, response.parsed_body["ok"]
       assert_equal "Internal error (oops)", response.parsed_body["error"]
-      assert_equal RuntimeError, captured_report.fetch(:error).class
-      assert_equal({handled: true, severity: :error}, captured_report.fetch(:options))
     end
+
+    assert_predicate report, :handled?
+    assert_equal :error, report.severity
   end
 
   test "returns a 500 status and error message if the handler does not expose errors" do
