@@ -86,7 +86,7 @@ class BaseHandlerTest < ActiveSupport::TestCase
 
     handler.handle(first_request)
 
-    with_captured_info_logs(Rails.logger) do |messages|
+    with_captured_info_logs(Rails) do |messages|
       handler.handle(second_request)
 
       assert_equal ["#{handler.inspect} Webhook duplicate-event is a duplicate delivery and will not be stored."], messages

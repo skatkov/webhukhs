@@ -100,7 +100,7 @@ class ProcessingJobTest < ActiveJob::TestCase
 
     webhook.define_singleton_method(:handler) { handler }
 
-    with_captured_info_logs(job.logger) do |messages|
+    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
 
       assert_equal ["#{details} is being processed in a different job or has been processed already, skipping."], messages
@@ -124,7 +124,7 @@ class ProcessingJobTest < ActiveJob::TestCase
 
     webhook.define_singleton_method(:handler) { handler }
 
-    with_captured_info_logs(job.logger) do |messages|
+    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
 
       assert_equal ["#{details} starting to process", "#{details} processed"], messages
@@ -151,7 +151,7 @@ class ProcessingJobTest < ActiveJob::TestCase
 
     webhook.define_singleton_method(:handler) { handler }
 
-    with_captured_info_logs(job.logger) do |messages|
+    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
 
       assert_equal ["#{details} did not pass validation by the handler. Marking it `failed_validation`."], messages
