@@ -9,26 +9,33 @@ class SkipDuringProcessingHandler < Webhukhs::BaseHandler
 end
 
 class LoggingHandler < Webhukhs::BaseHandler
-  attr_reader :processed_webhooks
+  class_attribute :processed_webhook_ids, default: []
 
-  def initialize(valid: true)
-    @valid = valid
-    @processed_webhooks = []
+  def self.reset!
+    self.processed_webhook_ids = []
   end
 
-  def valid?(_request)
-    @valid
-  end
+  def to_s = self.class.name
+
+  def valid?(_request) = true
 
   def process(webhook)
-    @processed_webhooks << webhook
+    self.class.processed_webhook_ids += [webhook.id]
   end
+end
+
+class InvalidLoggingHandler < LoggingHandler
+  def valid?(_request) = false
 end
 
 class ProcessingJobTest < ActiveJob::TestCase
   cover "Webhukhs::ProcessingJob*"
 
-  teardown { Webhukhs::ReceivedWebhook.delete_all }
+  teardown do
+    Webhukhs::ReceivedWebhook.delete_all
+    LoggingHandler.reset!
+    InvalidLoggingHandler.reset!
+  end
 
   test "discards job and reports error when webhook argument is nil" do
     assert_error_reported(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
@@ -89,16 +96,13 @@ class ProcessingJobTest < ActiveJob::TestCase
   test "logs when processing is skipped because the webhook is not received" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "skip-log-test",
-      handler_module_name: "WebhookTestHandler",
+      handler_module_name: "LoggingHandler",
       status: "processing",
       body: {}.to_json,
       request_headers: {}
     )
-    handler = LoggingHandler.new
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
-
-    webhook.define_singleton_method(:handler) { handler }
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: LoggingHandler)"
 
     with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
@@ -110,7 +114,7 @@ class ProcessingJobTest < ActiveJob::TestCase
   test "logs when processing starts and completes" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "success-log-test",
-      handler_module_name: "WebhookTestHandler",
+      handler_module_name: "LoggingHandler",
       status: "received",
       body: {}.to_json,
       request_headers: {
@@ -118,11 +122,8 @@ class ProcessingJobTest < ActiveJob::TestCase
         "action_dispatch.request.path_parameters" => {}
       }
     )
-    handler = LoggingHandler.new
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
-
-    webhook.define_singleton_method(:handler) { handler }
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: LoggingHandler)"
 
     with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
@@ -131,13 +132,13 @@ class ProcessingJobTest < ActiveJob::TestCase
     end
 
     assert_predicate webhook.reload, :processed?
-    assert_equal [webhook], handler.processed_webhooks
+    assert_equal [webhook.id], LoggingHandler.processed_webhook_ids
   end
 
   test "logs when validation fails" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "failed-validation-log-test",
-      handler_module_name: "WebhookTestHandler",
+      handler_module_name: "InvalidLoggingHandler",
       status: "received",
       body: {}.to_json,
       request_headers: {
@@ -145,11 +146,8 @@ class ProcessingJobTest < ActiveJob::TestCase
         "action_dispatch.request.path_parameters" => {}
       }
     )
-    handler = LoggingHandler.new(valid: false)
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
-
-    webhook.define_singleton_method(:handler) { handler }
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: InvalidLoggingHandler)"
 
     with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
       job.perform(webhook)
