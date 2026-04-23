@@ -20,7 +20,7 @@ module Webhukhs
 
       enqueue(webhook)
     rescue ActiveRecord::RecordNotUnique # Webhook deduplicated
-      nil
+      Rails.logger.info { "#{inspect} Webhook #{handler_event_id} is a duplicate delivery and will not be stored." }
     end
 
     # Enqueues the processing job to process webhook asynchronously. The job class could be configured.
