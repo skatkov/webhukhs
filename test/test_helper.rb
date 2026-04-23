@@ -63,6 +63,16 @@ class ActiveSupport::TestCase
     with_overridden_singleton_methods(target, {method_name => implementation}, &block)
   end
 
+  def with_captured_info_logs(logger)
+    messages = []
+
+    with_overridden_singleton_method(logger, :info, ->(message = nil, &block) {
+      messages << (block ? block.call : message)
+    }) do
+      yield messages
+    end
+  end
+
   def with_overridden_singleton_methods(target, methods)
     singleton_class = target.singleton_class
     original_names = methods.keys.each_with_index.to_h do |name, index|

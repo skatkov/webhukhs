@@ -8,6 +8,23 @@ class SkipDuringProcessingHandler < Webhukhs::BaseHandler
   end
 end
 
+class LoggingHandler < Webhukhs::BaseHandler
+  attr_reader :processed_webhooks
+
+  def initialize(valid: true)
+    @valid = valid
+    @processed_webhooks = []
+  end
+
+  def valid?(_request)
+    @valid
+  end
+
+  def process(webhook)
+    @processed_webhooks << webhook
+  end
+end
+
 class ProcessingJobTest < ActiveJob::TestCase
   cover "Webhukhs::ProcessingJob*"
 
@@ -66,6 +83,80 @@ class ProcessingJobTest < ActiveJob::TestCase
     Webhukhs::ProcessingJob.new.perform(webhook)
 
     assert_equal true, with_lock_called
+    assert_predicate webhook.reload, :failed_validation?
+  end
+
+  test "logs when processing is skipped because the webhook is not received" do
+    webhook = Webhukhs::ReceivedWebhook.create!(
+      handler_event_id: "skip-log-test",
+      handler_module_name: "WebhookTestHandler",
+      status: "processing",
+      body: {}.to_json,
+      request_headers: {}
+    )
+    handler = LoggingHandler.new
+    job = Webhukhs::ProcessingJob.new
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
+
+    webhook.define_singleton_method(:handler) { handler }
+
+    with_captured_info_logs(job.logger) do |messages|
+      job.perform(webhook)
+
+      assert_equal ["#{details} is being processed in a different job or has been processed already, skipping."], messages
+    end
+  end
+
+  test "logs when processing starts and completes" do
+    webhook = Webhukhs::ReceivedWebhook.create!(
+      handler_event_id: "success-log-test",
+      handler_module_name: "WebhookTestHandler",
+      status: "received",
+      body: {}.to_json,
+      request_headers: {
+        "CONTENT_TYPE" => "application/json",
+        "action_dispatch.request.path_parameters" => {}
+      }
+    )
+    handler = LoggingHandler.new
+    job = Webhukhs::ProcessingJob.new
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
+
+    webhook.define_singleton_method(:handler) { handler }
+
+    with_captured_info_logs(job.logger) do |messages|
+      job.perform(webhook)
+
+      assert_equal ["#{details} starting to process", "#{details} processed"], messages
+    end
+
+    assert_predicate webhook.reload, :processed?
+    assert_equal [webhook], handler.processed_webhooks
+  end
+
+  test "logs when validation fails" do
+    webhook = Webhukhs::ReceivedWebhook.create!(
+      handler_event_id: "failed-validation-log-test",
+      handler_module_name: "WebhookTestHandler",
+      status: "received",
+      body: {}.to_json,
+      request_headers: {
+        "CONTENT_TYPE" => "application/json",
+        "action_dispatch.request.path_parameters" => {}
+      }
+    )
+    handler = LoggingHandler.new(valid: false)
+    job = Webhukhs::ProcessingJob.new
+    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: #{handler})"
+
+    webhook.define_singleton_method(:handler) { handler }
+
+    with_captured_info_logs(job.logger) do |messages|
+      job.perform(webhook)
+
+      assert_equal ["#{details} did not pass validation by the handler. Marking it `failed_validation`."], messages
+    end
+
     assert_predicate webhook.reload, :failed_validation?
   end
 

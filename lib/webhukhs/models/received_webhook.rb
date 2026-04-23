@@ -115,8 +115,10 @@ module Webhukhs
       return if self.class.columns_hash.fetch("id").type == :integer
 
       self.id = if SecureRandom.respond_to?(:uuid_v7)
+        # Ruby 3.3+ UUIDv7 keeps inserts more index-friendly than random UUIDv4.
         SecureRandom.uuid_v7
       else
+        # Fallback for Rubies without UUIDv7 support.
         SecureRandom.uuid
       end
     end

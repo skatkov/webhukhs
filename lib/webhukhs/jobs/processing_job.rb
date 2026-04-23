@@ -25,16 +25,24 @@ module Webhukhs
         raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
 
+      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
+
       webhook.with_lock do
-        return unless webhook.received?
+        unless webhook.received?
+          logger.info { "#{webhook_details_for_logs} is being processed in a different job or has been processed already, skipping." }
+          return
+        end
 
         webhook.processing!
       end
 
       if webhook.handler.valid?(webhook.request)
+        logger.info { "#{webhook_details_for_logs} starting to process" }
         webhook.handler.process(webhook)
         webhook.processed! if webhook.processing?
+        logger.info { "#{webhook_details_for_logs} processed" }
       else
+        logger.info { "#{webhook_details_for_logs} did not pass validation by the handler. Marking it `failed_validation`." }
         webhook.failed_validation!
       end
     rescue
