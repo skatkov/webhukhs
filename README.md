@@ -30,12 +30,14 @@ Define a class for your first handler (let's call it `ExampleHandler`) and inher
 ```ruby
 Webhukhs.configure do |config|
   config.active_handlers = {
-    "test-handler" => "WebhookTestHandler"
+    "example" => "ExampleHandler"
   }
 end
 ```
 
-## Examples
+Now you will be able to accept we hooks on `/webhooks/example` path.
+
+## More Examples
 - `example` folder contains a demo app with engine fully configured.
 - We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. 
 
