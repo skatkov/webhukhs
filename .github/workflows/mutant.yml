@@ -9,4 +9,6 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
-      - run: bundle exec mutant run --fail-fast
+      - run: |
+          git fetch origin main
+          bundle exec mutant run --fail-fast --since origin/main
