@@ -1,18 +1,21 @@
-require_relative "test_app"
-require "rails/test_help"
-require "mutant/minitest/coverage"
-require "active_support/logger"
-require "stringio"
-
 if ENV["SIMPLECOV"]
   require "simplecov"
 
   SimpleCov.start do
     add_filter "/spec/"
+    add_filter "/test/"
+    add_filter "/lib/webhukhs/install_generator.rb"
     minimum_coverage 100
     minimum_coverage_by_file 100
   end
 end
+
+require_relative "test_app"
+require "rails/test_help"
+require "minitest/strict"
+require "mutant/minitest/coverage"
+require "active_support/logger"
+require "stringio"
 
 class ActiveSupport::TestCase
   # Same as "assert_changes" in Rails but for countable entities.

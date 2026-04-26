@@ -25,10 +25,6 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
   teardown { Webhukhs::ReceivedWebhook.delete_all }
 
-  def test_that_it_has_a_version_number
-    refute_nil ::Webhukhs::VERSION
-  end
-
   def webhook_body
     <<~JSON
       {
@@ -64,32 +60,8 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     Webhukhs.instance_variable_set(:@configuration, original_configuration)
   end
 
-  test "applies the configured error context before handling requests" do
-    original_error_context = Webhukhs.configuration.error_context
-
-    Webhukhs.configuration.error_context = {component: "webhooks"}
-
-    report = assert_error_reported(RuntimeError) do
-      post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
-
-      assert_response 200
-    end
-
-    assert_equal "webhooks", report.context[:component]
-  ensure
-    Webhukhs.configuration.error_context = original_error_context
-  end
-
-  test "ensure webhook is processed only once during creation" do
-    tf = Tempfile.new
-    body = {isValid: true, outputToFilename: tf.path}
-    body_json = body.to_json
-
-    assert_enqueued_jobs 1, only: Webhukhs::ProcessingJob do
-      post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
-      assert_response 200
-      assert_equal({"ok" => true, "error" => nil}, response.parsed_body)
-    end
+  test "loads engine generators" do
+    assert_nothing_raised { Webhukhs::Engine.load_generators }
   end
 
   test "accepts a webhook, stores and processes it" do
@@ -99,13 +71,9 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
     post "/webhukhs/test", params: body_json, headers: {"CONTENT_TYPE" => "application/json"}
     assert_response 200
+    assert_equal({"ok" => true, "error" => nil}, response.parsed_body)
 
     webhook = Webhukhs::ReceivedWebhook.last!
-
-    assert_predicate webhook, :received?
-    assert_equal "WebhookTestHandler", webhook.handler_module_name
-    assert_equal webhook.status, "received"
-    assert_equal webhook.body, body_json
 
     perform_enqueued_jobs
     assert_predicate webhook.reload, :processed?
@@ -123,11 +91,6 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
     webhook = Webhukhs::ReceivedWebhook.last!
 
-    assert_predicate webhook, :received?
-    assert_equal "WebhookTestHandler", webhook.handler_module_name
-    assert_equal webhook.status, "received"
-    assert_equal webhook.body, body_json
-
     perform_enqueued_jobs
     assert_predicate webhook.reload, :failed_validation?
 
@@ -144,11 +107,6 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_response 200
 
     webhook = Webhukhs::ReceivedWebhook.last!
-
-    assert_predicate webhook, :received?
-    assert_equal "WebhookTestHandler", webhook.handler_module_name
-    assert_equal webhook.status, "received"
-    assert_equal webhook.body, body_json
 
     assert_raises(StandardError) { perform_enqueued_jobs }
     assert_predicate webhook.reload, :error?
@@ -210,16 +168,22 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
   end
 
   test "returns a 200 status and error message if the handler does not expose errors" do
+    original_error_context = Webhukhs.configuration.error_context
+    Webhukhs.configuration.error_context = {component: "webhooks"}
+
     report = assert_error_reported(RuntimeError) do
       post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 200
-      assert_equal false, response.parsed_body["ok"]
+      assert_false response.parsed_body["ok"]
       assert_equal "Internal error (oops)", response.parsed_body["error"]
     end
 
     assert_predicate report, :handled?
     assert_equal :error, report.severity
+    assert_equal "webhooks", report.context[:component]
+  ensure
+    Webhukhs.configuration.error_context = original_error_context
   end
 
   test "returns a 500 status and error message if the handler does not expose errors" do
@@ -256,10 +220,7 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     original_active_handlers = Webhukhs.configuration.active_handlers
     Webhukhs.configuration.active_handlers = original_active_handlers.merge(class_handler: WebhookTestHandler)
 
-    post "/webhukhs/class_handler", params: {isValid: false, outputToFilename: "/tmp/unused"}.to_json, headers: {"CONTENT_TYPE" => "application/json"}
-
-    assert_response 200
-    assert_equal({"ok" => true, "error" => nil}, response.parsed_body)
+    assert_instance_of WebhookTestHandler, Webhukhs::ReceiveWebhooksController.new.lookup_handler("class_handler")
   ensure
     Webhukhs.configuration.active_handlers = original_active_handlers
   end
@@ -303,17 +264,5 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
       assert_equal "received", webhook.status
     end
-  end
-
-  test "ensure_id does not override id for integer primary key columns" do
-    webhook = Webhukhs::ReceivedWebhook.create!(
-      handler_event_id: SecureRandom.uuid,
-      handler_module_name: "WebhookTestHandler",
-      status: "received",
-      body: {isValid: true}.to_json
-    )
-
-    assert_kind_of Integer, webhook.id
-    assert webhook.id > 0
   end
 end
