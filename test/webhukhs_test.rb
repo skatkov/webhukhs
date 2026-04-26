@@ -265,5 +265,4 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
       assert_equal "received", webhook.status
     end
   end
-
 end
