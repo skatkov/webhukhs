@@ -32,9 +32,9 @@ class BaseHandlerTest < ActiveSupport::TestCase
   test "defaults to active, valid and exposing errors" do
     handler = Webhukhs::BaseHandler.new
 
-    assert_equal true, handler.active?
-    assert_equal true, handler.valid?(nil)
-    assert_equal true, handler.expose_errors_to_sender?
+    assert_true handler.active?
+    assert_true handler.valid?(nil)
+    assert_true handler.expose_errors_to_sender?
   end
 
   test "generates unique UUID event ids by default" do

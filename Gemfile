@@ -12,3 +12,5 @@ gem "yard-lint"
 gem "mutant"
 gem "mutant-minitest"
 gem "simplecov", "~> 0.22", require: false
+
+gem "minitest-strict", "~> 1.0"

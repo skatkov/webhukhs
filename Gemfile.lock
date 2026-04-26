@@ -125,6 +125,8 @@ GEM
     marcel (1.1.0)
     mini_mime (1.1.5)
     minitest (5.27.0)
+    minitest-strict (1.0.0)
+      minitest (>= 5.21, < 7)
     mutant (0.16.0)
       diff-lcs (>= 1.6, < 3)
       irb (~> 1.15)
@@ -319,6 +321,7 @@ DEPENDENCIES
   appraisal
   magic_frozen_string_literal
   minitest (~> 5.0)
+  minitest-strict (~> 1.0)
   mutant
   mutant-minitest
   rake (~> 13.0)
@@ -370,6 +373,7 @@ CHECKSUMS
   marcel (1.1.0) sha256=fdcfcfa33cc52e93c4308d40e4090a5d4ea279e160a7f6af988260fa970e0bee
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
   minitest (5.27.0) sha256=2d3b17f8a36fe7801c1adcffdbc38233b938eb0b4966e97a6739055a45fa77d5
+  minitest-strict (1.0.0) sha256=a3585876a0da78dfb9c73e7d905ece94ff4b11c0e624a23472e28ed96095ec1f
   mutant (0.16.0) sha256=651dfbf4e0c32bb918e823505d41348070d7f3f76430cf046696b06e3887b9c4
   mutant-minitest (0.16.0) sha256=0ba5f541694591f3149c30a250f0792962bb69c800754bdf4bccad48de95f96e
   mutex_m (0.3.0) sha256=cfcb04ac16b69c4813777022fdceda24e9f798e48092a2b817eb4c0a782b0751

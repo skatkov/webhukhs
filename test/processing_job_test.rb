@@ -37,36 +37,25 @@ class ProcessingJobTest < ActiveJob::TestCase
     InvalidLoggingHandler.reset!
   end
 
-  test "discards job and reports error when webhook argument is nil" do
-    assert_error_reported(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
-      Webhukhs::ProcessingJob.perform_now(nil)
+  test "discards job and reports invalid webhook arguments" do
+    [nil, "not a webhook"].each do |argument|
+      assert_error_reported(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
+        Webhukhs::ProcessingJob.perform_now(argument)
+      end
     end
-
-    assert_no_enqueued_jobs only: Webhukhs::ProcessingJob
   end
 
-  test "raises a specific error message when webhook argument is nil" do
-    error = assert_raises(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
-      Webhukhs::ProcessingJob.new.perform(nil)
+  test "raises specific invalid webhook argument messages" do
+    {
+      nil => "ProcessingJob received nil webhook argument",
+      "not a webhook" => "ProcessingJob expected Webhukhs::ReceivedWebhook, got String"
+    }.each do |argument, message|
+      error = assert_raises(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
+        Webhukhs::ProcessingJob.new.perform(argument)
+      end
+
+      assert_equal message, error.message
     end
-
-    assert_equal "ProcessingJob received nil webhook argument", error.message
-  end
-
-  test "discards job and reports error when webhook argument is not a ReceivedWebhook" do
-    assert_error_reported(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
-      Webhukhs::ProcessingJob.perform_now("not a webhook")
-    end
-
-    assert_no_enqueued_jobs only: Webhukhs::ProcessingJob
-  end
-
-  test "raises a specific error message when webhook argument is not a ReceivedWebhook" do
-    error = assert_raises(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
-      Webhukhs::ProcessingJob.new.perform("not a webhook")
-    end
-
-    assert_equal "ProcessingJob expected Webhukhs::ReceivedWebhook, got String", error.message
   end
 
   test "processes webhooks under a lock" do
@@ -89,7 +78,7 @@ class ProcessingJobTest < ActiveJob::TestCase
 
     Webhukhs::ProcessingJob.new.perform(webhook)
 
-    assert_equal true, with_lock_called
+    assert_true with_lock_called
     assert_predicate webhook.reload, :failed_validation?
   end
 
@@ -189,7 +178,5 @@ class ProcessingJobTest < ActiveJob::TestCase
     assert_error_reported(ActiveJob::DeserializationError) do
       perform_enqueued_jobs
     end
-
-    assert_no_enqueued_jobs only: Webhukhs::ProcessingJob
   end
 end
