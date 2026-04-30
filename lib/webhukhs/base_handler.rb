@@ -12,15 +12,18 @@ module Webhukhs
     # @param action_dispatch_request [ActionDispatch::Request] request from the controller
     # @return [void]
     def handle(action_dispatch_request)
-      handler_module_name = to_s
       handler_event_id = extract_event_id_from_request(action_dispatch_request)
 
-      webhook = ReceivedWebhook.new(request: action_dispatch_request, handler_event_id: handler_event_id, handler_module_name: handler_module_name)
+      webhook = ReceivedWebhook.new(
+        request: action_dispatch_request,
+        handler_event_id: handler_event_id,
+        handler_module_name: to_s
+      )
       webhook.save!
 
       enqueue(webhook)
     rescue ActiveRecord::RecordNotUnique # Webhook deduplicated
-      Webhukhs.instrument(operation: :receive, outcome: :duplicate, severity: :warn, handler_class: to_s)
+      Webhukhs.instrument(operation: :receive, outcome: :duplicate, severity: :warn, handler_class: to_s, handler_event_id: handler_event_id)
     end
 
     # Returns a stable handler name for persistence and event payloads.

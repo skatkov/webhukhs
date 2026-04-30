@@ -96,7 +96,7 @@ class BaseHandlerTest < ActiveSupport::TestCase
     assert_equal :duplicate, event.fetch(:outcome)
     assert_equal :warn, event.fetch(:severity)
     assert_equal "ExtractIdHandler", event.fetch(:handler_class)
-    assert_false event.key?(:handler_event_id)
+    assert_equal "duplicate-event", event.fetch(:handler_event_id)
   end
 
   test "enqueue uses configured processing job classes directly" do
