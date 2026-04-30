@@ -3,17 +3,13 @@
 require "active_job/railtie"
 
 module Webhukhs
-  # Background job that validates and processes a persisted webhook.
   class ProcessingJob < ActiveJob::Base
-    # Raised when the job receives an invalid webhook argument.
     class InvalidWebhookArgument < StandardError; end
 
     discard_on ActiveJob::DeserializationError, InvalidWebhookArgument do |_job, error|
       Webhukhs.instrument(operation: :process, outcome: :discarded, severity: :error, error: error)
     end
 
-    # Runs webhook validation and processing lifecycle.
-    #
     # @param webhook [Webhukhs::ReceivedWebhook] webhook record to process
     # @return [void]
     def perform(webhook)
