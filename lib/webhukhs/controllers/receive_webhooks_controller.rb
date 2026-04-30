@@ -31,7 +31,7 @@ module Webhukhs
       render_error_with_status("Webhook handler #{service_id.inspect} is inactive", status: :service_unavailable)
     rescue => e
       Webhukhs.instrument(
-        {operation: :receive, outcome: :error, severity: :error, error: e, service_id: service_id, handler_class: handler&.to_s}
+        operation: :receive, outcome: :error, severity: :error, error: e, service_id: service_id, handler_class: handler&.to_s
       )
 
       raise unless handler
