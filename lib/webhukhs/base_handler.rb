@@ -12,15 +12,26 @@ module Webhukhs
     # @param action_dispatch_request [ActionDispatch::Request] request from the controller
     # @return [void]
     def handle(action_dispatch_request)
-      handler_module_name = self.class.name
+      module_name = handler_module_name
       handler_event_id = extract_event_id_from_request(action_dispatch_request)
 
-      webhook = ReceivedWebhook.new(request: action_dispatch_request, handler_event_id: handler_event_id, handler_module_name: handler_module_name)
+      webhook = ReceivedWebhook.new(
+        request: action_dispatch_request,
+        handler_event_id: handler_event_id,
+        handler_module_name: module_name
+      )
       webhook.save!
 
       enqueue(webhook)
     rescue ActiveRecord::RecordNotUnique # Webhook deduplicated
-      Rails.logger.info { "#{inspect} Webhook #{handler_event_id} is a duplicate delivery and will not be stored." }
+      Webhukhs.instrument(operation: :receive, outcome: :duplicate, severity: :warn, handler_class: module_name, handler_event_id: handler_event_id)
+    end
+
+    # Returns the module name used for persistence and event payloads.
+    #
+    # @return [String]
+    def handler_module_name
+      self.class.name
     end
 
     # Enqueues the processing job to process webhook asynchronously. The job class could be configured.

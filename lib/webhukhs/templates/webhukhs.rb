@@ -24,17 +24,35 @@ Webhukhs.configure do |config|
   #
   # config.processing_job_class = "WebhookProcessingJob"
 
-  # We're using a common interface for error reporting provided by Rails, e.g Rails.error.report. In some cases
-  # you want to enhance those errors with additional context. As example to provide a namespace:
-  #
-  # { appsignal: { namespace: "webhooks" } }
-  #
-  # config.error_context = { appsignal: { namespace: "webhooks" } }
-
   # Incoming webhooks will be written into your DB without any prior validation. By default, Webhukhs limits the
   # request body size for webhooks to 512 KiB, so that it would not be too easy for an attacker to fill your
   # database with junk. However, if you are receiving very large webhook payloads you might need to increase
   # that limit (or make it even smaller for extra security)
   #
   # config.request_body_size_limit = 2.megabytes
+end
+
+# Webhukhs emits all observability data through a single ActiveSupport::Notifications event.
+# Subscribe to route events to logs, metrics, error reporters or any other observability system.
+#
+# @example schema for event payload
+# {
+#   operation: :receive | :process,
+#   outcome: :duplicate | :unknown_handler | :inactive_handler | :error |
+#            :discarded | :skipped | :started | :completed | :validation_failed,
+#   severity: :info | :warn | :error,
+#   error: Exception,             # only present for error events
+#   service_id: String,           # optional
+#   handler_class: String,        # optional
+#   handler_event_id: String,     # optional
+#   webhook_id: Integer | String  # optional
+# }
+ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
+  next unless payload[:severity] == :error
+
+  Rails.error.report(
+    payload.fetch(:error),
+    severity: :error,
+    context: payload.except(:error, :severity)
+  )
 end

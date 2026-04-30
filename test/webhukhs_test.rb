@@ -60,6 +60,14 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     Webhukhs.instance_variable_set(:@configuration, original_configuration)
   end
 
+  test "emits single structured webhukhs event notifications" do
+    events = captured_webhukhs_events do
+      Webhukhs.instrument(operation: :receive, outcome: :accepted, severity: :info)
+    end
+
+    assert_equal [{operation: :receive, outcome: :accepted, severity: :info}], events
+  end
+
   test "loads engine generators" do
     assert_nothing_raised { Webhukhs::Engine.load_generators }
   end
@@ -108,7 +116,17 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
 
     webhook = Webhukhs::ReceivedWebhook.last!
 
-    assert_raises(StandardError) { perform_enqueued_jobs }
+    events = captured_webhukhs_events do
+      assert_raises(StandardError) { perform_enqueued_jobs }
+    end
+
+    assert_equal [:started, :error], events.map { |event| event.fetch(:outcome) }
+    error_event = events.fetch(1)
+    assert_equal :process, error_event.fetch(:operation)
+    assert_equal :error, error_event.fetch(:severity)
+    assert_equal webhook.id, error_event.fetch(:webhook_id)
+    assert_equal "WebhookTestHandler", error_event.fetch(:handler_class)
+    assert_instance_of RuntimeError, error_event.fetch(:error)
     assert_predicate webhook.reload, :error?
 
     tf.rewind
@@ -144,34 +162,42 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
   end
 
   test "raises an error if the service_id is not known" do
-    report = assert_error_reported(Webhukhs::ReceiveWebhooksController::UnknownHandler) do
+    events = captured_webhukhs_events do
       post "/webhukhs/missing_service", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 404
       assert_equal "No handler found for \"missing_service\"", response.parsed_body["error"]
     end
 
-    assert_predicate report, :handled?
-    assert_equal :error, report.severity
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :unknown_handler, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_equal "missing_service", event.fetch(:service_id)
+    assert_instance_of Webhukhs::ReceiveWebhooksController::UnknownHandler, event.fetch(:error)
   end
 
   test "returns a 503 when a handler is inactive" do
-    report = assert_error_reported(Webhukhs::ReceiveWebhooksController::HandlerInactive) do
+    events = captured_webhukhs_events do
       post "/webhukhs/inactive", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 503
       assert_equal 'Webhook handler "inactive" is inactive', response.parsed_body["error"]
     end
 
-    assert_predicate report, :handled?
-    assert_equal :error, report.severity
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :inactive_handler, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_equal "inactive", event.fetch(:service_id)
+    assert_equal "InactiveHandler", event.fetch(:handler_class)
+    assert_instance_of Webhukhs::ReceiveWebhooksController::HandlerInactive, event.fetch(:error)
   end
 
   test "returns a 200 status and error message if the handler does not expose errors" do
-    original_error_context = Webhukhs.configuration.error_context
-    Webhukhs.configuration.error_context = {component: "webhooks"}
-
-    report = assert_error_reported(RuntimeError) do
+    events = captured_webhukhs_events do
       post "/webhukhs/failing-with-concealed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
 
       assert_response 200
@@ -179,17 +205,30 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
       assert_equal "Internal error (oops)", response.parsed_body["error"]
     end
 
-    assert_predicate report, :handled?
-    assert_equal :error, report.severity
-    assert_equal "webhooks", report.context[:component]
-  ensure
-    Webhukhs.configuration.error_context = original_error_context
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :error, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_equal "failing-with-concealed-errors", event.fetch(:service_id)
+    assert_equal "FailingWithConcealedErrors", event.fetch(:handler_class)
+    assert_instance_of RuntimeError, event.fetch(:error)
   end
 
   test "returns a 500 status and error message if the handler does not expose errors" do
-    post "/webhukhs/failing-with-exposed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    events = captured_webhukhs_events do
+      post "/webhukhs/failing-with-exposed-errors", params: webhook_body, headers: {"CONTENT_TYPE" => "application/json"}
+    end
 
     assert_response 500
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :error, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_equal "failing-with-exposed-errors", event.fetch(:service_id)
+    assert_equal "FailingWithExposedErrors", event.fetch(:handler_class)
+    assert_instance_of RuntimeError, event.fetch(:error)
     # The response generation in this case is done by Rails, through the
     # common Rails error page
   end
@@ -211,9 +250,20 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     original_error = NameError.new("uninitialized constant MissingHandler")
     controller = FailingLookupReceiveWebhooksController.new(original_error)
 
-    raised_error = assert_raises(NameError) { controller.create }
+    events = captured_webhukhs_events do
+      raised_error = assert_raises(NameError) { controller.create }
 
-    assert_same original_error, raised_error
+      assert_same original_error, raised_error
+    end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :error, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_equal "broken", event.fetch(:service_id)
+    assert_same original_error, event.fetch(:error)
+    assert_false event.key?(:handler_class)
   end
 
   test "accepts handlers configured as class constants" do

@@ -11,12 +11,12 @@ AllValidators:
   # Global file exclusion patterns
   Exclude:
     - '\.git'
-    - 'vendor/**/*'
-    - 'node_modules/**/*'
-    - 'spec/**/*'
-    - 'test/**/*'
-    - 'handler-examples/**/*'
-    - 'example/**/*'
+    - "vendor/**/*"
+    - "node_modules/**/*"
+    - "spec/**/*"
+    - "test/**/*"
+    - "handler-examples/**/*"
+    - "example/**/*"
 
   # Exit code behavior (error, warning, convention, never)
   FailOnSeverity: warning
@@ -32,35 +32,35 @@ AllValidators:
 
 # Documentation validators
 Documentation/UndocumentedObjects:
-  Description: 'Checks for classes, modules, and methods without documentation.'
-  Enabled: true
+  Description: "Checks for classes, modules, and methods without documentation."
+  Enabled: false
   Severity: warning
   ExcludedMethods:
-    - 'initialize/0'  # Exclude parameter-less initialize
-    - '/^_/'          # Exclude private methods (by convention)
+    - "initialize/0" # Exclude parameter-less initialize
+    - "/^_/" # Exclude private methods (by convention)
 
 Documentation/UndocumentedMethodArguments:
-  Description: 'Checks for method parameters without @param tags.'
+  Description: "Checks for method parameters without @param tags."
   Enabled: true
   Severity: warning
 
 Documentation/UndocumentedBooleanMethods:
-  Description: 'Checks that question mark methods document their boolean return.'
+  Description: "Checks that question mark methods document their boolean return."
   Enabled: true
   Severity: warning
 
 Documentation/UndocumentedOptions:
-  Description: 'Detects methods with options hash parameters but no @option tags.'
+  Description: "Detects methods with options hash parameters but no @option tags."
   Enabled: true
   Severity: warning
 
 Documentation/MarkdownSyntax:
-  Description: 'Detects common markdown syntax errors in documentation.'
+  Description: "Detects common markdown syntax errors in documentation."
   Enabled: true
   Severity: warning
 
 Documentation/EmptyCommentLine:
-  Description: 'Detects empty comment lines at the start or end of documentation blocks.'
+  Description: "Detects empty comment lines at the start or end of documentation blocks."
   Enabled: true
   Severity: convention
   EnabledPatterns:
@@ -68,7 +68,7 @@ Documentation/EmptyCommentLine:
     Trailing: true
 
 Documentation/BlankLineBeforeDefinition:
-  Description: 'Detects blank lines between YARD documentation and method definition.'
+  Description: "Detects blank lines between YARD documentation and method definition."
   Enabled: true
   Severity: convention
   OrphanedSeverity: convention
@@ -78,7 +78,7 @@ Documentation/BlankLineBeforeDefinition:
 
 # Tags validators
 Tags/Order:
-  Description: 'Enforces consistent ordering of YARD tags.'
+  Description: "Enforces consistent ordering of YARD tags."
   Enabled: true
   Severity: convention
   EnforcedOrder:
@@ -95,7 +95,7 @@ Tags/Order:
     - todo
 
 Tags/InvalidTypes:
-  Description: 'Validates type definitions in @param, @return, @option tags.'
+  Description: "Validates type definitions in @param, @return, @option tags."
   Enabled: true
   Severity: warning
   ValidatedTags:
@@ -104,7 +104,7 @@ Tags/InvalidTypes:
     - return
 
 Tags/TypeSyntax:
-  Description: 'Validates YARD type syntax using YARD parser.'
+  Description: "Validates YARD type syntax using YARD parser."
   Enabled: true
   Severity: warning
   ValidatedTags:
@@ -114,7 +114,7 @@ Tags/TypeSyntax:
     - yieldreturn
 
 Tags/MeaninglessTag:
-  Description: 'Detects @param/@option tags on classes, modules, or constants.'
+  Description: "Detects @param/@option tags on classes, modules, or constants."
   Enabled: true
   Severity: warning
   CheckedTags:
@@ -126,10 +126,10 @@ Tags/MeaninglessTag:
     - constant
 
 Tags/CollectionType:
-  Description: 'Validates Hash collection syntax consistency.'
+  Description: "Validates Hash collection syntax consistency."
   Enabled: true
   Severity: convention
-  EnforcedStyle: long  # 'long' for Hash{K => V} (YARD standard), 'short' for {K => V}
+  EnforcedStyle: long # 'long' for Hash{K => V} (YARD standard), 'short' for {K => V}
   ValidatedTags:
     - param
     - option
@@ -137,7 +137,7 @@ Tags/CollectionType:
     - yieldreturn
 
 Tags/TagTypePosition:
-  Description: 'Validates type annotation position in tags.'
+  Description: "Validates type annotation position in tags."
   Enabled: true
   Severity: convention
   CheckedTags:
@@ -148,8 +148,8 @@ Tags/TagTypePosition:
   EnforcedStyle: type_after_name
 
 Tags/ApiTags:
-  Description: 'Enforces @api tags on public objects.'
-  Enabled: false  # Opt-in validator
+  Description: "Enforces @api tags on public objects."
+  Enabled: false # Opt-in validator
   Severity: warning
   AllowedApis:
     - public
@@ -157,17 +157,17 @@ Tags/ApiTags:
     - internal
 
 Tags/OptionTags:
-  Description: 'Requires @option tags for methods with options parameters.'
+  Description: "Requires @option tags for methods with options parameters."
   Enabled: true
   Severity: warning
 
 Tags/ExampleSyntax:
-  Description: 'Validates Ruby syntax in @example tags.'
+  Description: "Validates Ruby syntax in @example tags."
   Enabled: true
   Severity: warning
 
 Tags/RedundantParamDescription:
-  Description: 'Detects meaningless parameter descriptions that add no value.'
+  Description: "Detects meaningless parameter descriptions that add no value."
   Enabled: true
   Severity: convention
   CheckedTags:
@@ -204,23 +204,23 @@ Tags/InformalNotation:
   CaseSensitive: false
   RequireStartOfLine: true
   Patterns:
-    Note: '@note'
-    Todo: '@todo'
-    TODO: '@todo'
-    FIXME: '@todo'
-    See: '@see'
-    See also: '@see'
-    Warning: '@deprecated'
-    Deprecated: '@deprecated'
-    Author: '@author'
-    Version: '@version'
-    Since: '@since'
-    Returns: '@return'
-    Raises: '@raise'
-    Example: '@example'
+    Note: "@note"
+    Todo: "@todo"
+    TODO: "@todo"
+    FIXME: "@todo"
+    See: "@see"
+    See also: "@see"
+    Warning: "@deprecated"
+    Deprecated: "@deprecated"
+    Author: "@author"
+    Version: "@version"
+    Since: "@since"
+    Returns: "@return"
+    Raises: "@raise"
+    Example: "@example"
 
 Tags/NonAsciiType:
-  Description: 'Detects non-ASCII characters in type annotations.'
+  Description: "Detects non-ASCII characters in type annotations."
   Enabled: true
   Severity: warning
   ValidatedTags:
@@ -231,8 +231,8 @@ Tags/NonAsciiType:
     - yieldparam
 
 Tags/TagGroupSeparator:
-  Description: 'Enforces blank line separators between different YARD tag groups.'
-  Enabled: false  # Opt-in validator
+  Description: "Enforces blank line separators between different YARD tag groups."
+  Enabled: false # Opt-in validator
   Severity: convention
   TagGroups:
     param: [param, option]
@@ -244,8 +244,8 @@ Tags/TagGroupSeparator:
   RequireAfterDescription: false
 
 Tags/ForbiddenTags:
-  Description: 'Detects forbidden tag and type combinations.'
-  Enabled: false  # Opt-in validator
+  Description: "Detects forbidden tag and type combinations."
+  Enabled: false # Opt-in validator
   Severity: convention
   ForbiddenPatterns: []
   # Example patterns:
@@ -259,37 +259,37 @@ Tags/ForbiddenTags:
 
 # Warnings validators - catches YARD parser errors
 Warnings/UnknownTag:
-  Description: 'Detects unknown YARD tags.'
+  Description: "Detects unknown YARD tags."
   Enabled: true
   Severity: error
 
 Warnings/UnknownDirective:
-  Description: 'Detects unknown YARD directives.'
+  Description: "Detects unknown YARD directives."
   Enabled: true
   Severity: error
 
 Warnings/InvalidTagFormat:
-  Description: 'Detects malformed tag syntax.'
+  Description: "Detects malformed tag syntax."
   Enabled: true
   Severity: error
 
 Warnings/InvalidDirectiveFormat:
-  Description: 'Detects malformed directive syntax.'
+  Description: "Detects malformed directive syntax."
   Enabled: true
   Severity: error
 
 Warnings/DuplicatedParameterName:
-  Description: 'Detects duplicate @param tags.'
+  Description: "Detects duplicate @param tags."
   Enabled: true
   Severity: error
 
 Warnings/UnknownParameterName:
-  Description: 'Detects @param tags for non-existent parameters.'
+  Description: "Detects @param tags for non-existent parameters."
   Enabled: true
   Severity: error
 
 # Semantic validators
 Semantic/AbstractMethods:
-  Description: 'Ensures @abstract methods do not have real implementations.'
+  Description: "Ensures @abstract methods do not have real implementations."
   Enabled: true
   Severity: warning

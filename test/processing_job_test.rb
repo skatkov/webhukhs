@@ -38,10 +38,18 @@ class ProcessingJobTest < ActiveJob::TestCase
   end
 
   test "discards job and reports invalid webhook arguments" do
-    [nil, "not a webhook"].each do |argument|
-      assert_error_reported(Webhukhs::ProcessingJob::InvalidWebhookArgument) do
+    events = captured_webhukhs_events do
+      [nil, "not a webhook"].each do |argument|
         Webhukhs::ProcessingJob.perform_now(argument)
       end
+    end
+
+    assert_equal 2, events.size
+    events.each do |event|
+      assert_equal :process, event.fetch(:operation)
+      assert_equal :discarded, event.fetch(:outcome)
+      assert_equal :error, event.fetch(:severity)
+      assert_instance_of Webhukhs::ProcessingJob::InvalidWebhookArgument, event.fetch(:error)
     end
   end
 
@@ -82,7 +90,7 @@ class ProcessingJobTest < ActiveJob::TestCase
     assert_predicate webhook.reload, :failed_validation?
   end
 
-  test "logs when processing is skipped because the webhook is not received" do
+  test "emits event when processing is skipped because the webhook is not received" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "skip-log-test",
       handler_module_name: "LoggingHandler",
@@ -91,16 +99,21 @@ class ProcessingJobTest < ActiveJob::TestCase
       request_headers: {}
     )
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: LoggingHandler)"
 
-    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
+    events = captured_webhukhs_events do
       job.perform(webhook)
-
-      assert_equal ["#{details} is being processed in a different job or has been processed already, skipping."], messages
     end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :process, event.fetch(:operation)
+    assert_equal :skipped, event.fetch(:outcome)
+    assert_equal :info, event.fetch(:severity)
+    assert_equal webhook.id, event.fetch(:webhook_id)
+    assert_equal "LoggingHandler", event.fetch(:handler_class)
   end
 
-  test "logs when processing starts and completes" do
+  test "emits events when processing starts and completes" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "success-log-test",
       handler_module_name: "LoggingHandler",
@@ -112,19 +125,24 @@ class ProcessingJobTest < ActiveJob::TestCase
       }
     )
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: LoggingHandler)"
 
-    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
+    events = captured_webhukhs_events do
       job.perform(webhook)
+    end
 
-      assert_equal ["#{details} starting to process", "#{details} processed"], messages
+    assert_equal [:started, :completed], events.map { |event| event.fetch(:outcome) }
+    events.each do |event|
+      assert_equal :process, event.fetch(:operation)
+      assert_equal :info, event.fetch(:severity)
+      assert_equal webhook.id, event.fetch(:webhook_id)
+      assert_equal "LoggingHandler", event.fetch(:handler_class)
     end
 
     assert_predicate webhook.reload, :processed?
     assert_equal [webhook.id], LoggingHandler.processed_webhook_ids
   end
 
-  test "logs when validation fails" do
+  test "emits event when validation fails" do
     webhook = Webhukhs::ReceivedWebhook.create!(
       handler_event_id: "failed-validation-log-test",
       handler_module_name: "InvalidLoggingHandler",
@@ -136,13 +154,18 @@ class ProcessingJobTest < ActiveJob::TestCase
       }
     )
     job = Webhukhs::ProcessingJob.new
-    details = "Webhukhs::ReceivedWebhook##{webhook.id} (handler: InvalidLoggingHandler)"
 
-    with_captured_info_logs(Webhukhs::ProcessingJob) do |messages|
+    events = captured_webhukhs_events do
       job.perform(webhook)
-
-      assert_equal ["#{details} did not pass validation by the handler. Marking it `failed_validation`."], messages
     end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :process, event.fetch(:operation)
+    assert_equal :validation_failed, event.fetch(:outcome)
+    assert_equal :info, event.fetch(:severity)
+    assert_equal webhook.id, event.fetch(:webhook_id)
+    assert_equal "InvalidLoggingHandler", event.fetch(:handler_class)
 
     assert_predicate webhook.reload, :failed_validation?
   end
@@ -175,8 +198,15 @@ class ProcessingJobTest < ActiveJob::TestCase
     Webhukhs::ProcessingJob.perform_later(webhook)
     webhook.destroy!
 
-    assert_error_reported(ActiveJob::DeserializationError) do
+    events = captured_webhukhs_events do
       perform_enqueued_jobs
     end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :process, event.fetch(:operation)
+    assert_equal :discarded, event.fetch(:outcome)
+    assert_equal :error, event.fetch(:severity)
+    assert_instance_of ActiveJob::DeserializationError, event.fetch(:error)
   end
 end

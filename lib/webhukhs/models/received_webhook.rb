@@ -106,7 +106,7 @@ module Webhukhs
 
     private
 
-    # Assigns a generated id when database does not auto-increment ids.
+    # Assigns UUID when database does not auto-increment ids.
     #
     # @return [void]
     def ensure_id

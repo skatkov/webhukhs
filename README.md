@@ -7,17 +7,29 @@ This is a fork of [cheddar-me/munster](https://github.com/cheddar-me/munster). O
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add webhukhs
+```sh
+bundle add webhukhs
+```
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install webhukhs
+```sh
+gem install webhukhs
+```
+
+Generate the Webhukhs migrations and initializer:
+
+```sh
+bin/rails g webhukhs:install
+```
+
+This creates database migrations and `config/initializers/webhukhs.rb`. Review the initializer to configure handlers and optional notification subscribers, then run:
+
+```sh
+bin/rails db:migrate
+```
 
 ## Usage
-
-Generate migrations and initializer file.
-
-`bin/rails g webhukhs:install`
 
 Mount webhukhs engine in your routes.
 
@@ -49,7 +61,7 @@ class ExampleHandler < Webhukhs::BaseHandler
 end
 ```
 
-Add the handler to your `webhukhs.rb` config file:
+Add the handler to `config/initializers/webhukhs.rb`:
 
 ```ruby
 Webhukhs.configure do |config|
@@ -72,16 +84,36 @@ This project depends on two dependencies:
 - Ruby >= 3.0
 - Rails >= 7.0
 
-## Error reporter
+## Notifications
 
-This gem uses [Rails common error reporter](https://guides.rubyonrails.org/error_reporting.html) to report any possible error to services like Honeybadger, Appsignal, Sentry and etc. Most of those services already support this common interface, if not - it's not that hard to add this support on your own.
+Webhukhs emits observability data through a single ActiveSupport notification: `webhukhs.event`.
 
-It's possible to provide additional context for every error. e.g.
+The generated initializer includes a commented example subscriber. Uncomment and adapt it to route events to logs, metrics, error reporters or any other observability system. For Rails 7+ applications, you can forward error events to [Rails common error reporter](https://guides.rubyonrails.org/error_reporting.html):
 
 ```ruby
-Webhukhs.configure do |config|
-  config.error_context = { appsignal: { namespace: "webhooks" } }
+ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
+  next unless payload[:severity] == :error
+
+  Rails.error.report(
+    payload.fetch(:error),
+    severity: :error,
+    context: payload.except(:error, :severity)
+  )
 end
+```
+
+Event payloads include structured non-sensitive metadata when available:
+
+```ruby
+{
+  operation: :receive,
+  outcome: :unknown_handler,
+  severity: :error,
+  error: error,
+  service_id: "stripe",
+  handler_class: "StripeHandler",
+  webhook_id: 123
+}
 ```
 
 ## Development

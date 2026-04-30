@@ -15,9 +15,15 @@ end
 class HandleProbeHandler < Webhukhs::BaseHandler
   attr_reader :enqueued_webhook
 
+  def to_s = "custom handler string"
+
   def enqueue(webhook)
     @enqueued_webhook = webhook
   end
+end
+
+class CustomStringExtractIdHandler < ExtractIdHandler
+  def to_s = "custom extract id handler string"
 end
 
 class BaseHandlerTest < ActiveSupport::TestCase
@@ -48,7 +54,7 @@ class BaseHandlerTest < ActiveSupport::TestCase
     refute_equal first_id, second_id
   end
 
-  test "handle passes the handler class name into received webhooks" do
+  test "handle passes the handler module name into received webhooks" do
     captured_attributes = nil
     request = ActionDispatch::Request.new(
       "rack.input" => StringIO.new("{}"),
@@ -73,8 +79,8 @@ class BaseHandlerTest < ActiveSupport::TestCase
     end
   end
 
-  test "handle logs duplicate deliveries" do
-    handler = ExtractIdHandler.new
+  test "handle emits duplicate delivery events" do
+    handler = CustomStringExtractIdHandler.new
     request_headers = {
       "CONTENT_TYPE" => "application/json",
       "action_dispatch.request.path_parameters" => {}
@@ -86,11 +92,17 @@ class BaseHandlerTest < ActiveSupport::TestCase
 
     handler.handle(first_request)
 
-    with_captured_info_logs(Rails) do |messages|
+    events = captured_webhukhs_events do
       handler.handle(second_request)
-
-      assert_equal ["#{handler.inspect} Webhook duplicate-event is a duplicate delivery and will not be stored."], messages
     end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :duplicate, event.fetch(:outcome)
+    assert_equal :warn, event.fetch(:severity)
+    assert_equal "CustomStringExtractIdHandler", event.fetch(:handler_class)
+    assert_equal "duplicate-event", event.fetch(:handler_event_id)
   end
 
   test "enqueue uses configured processing job classes directly" do
