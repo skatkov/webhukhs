@@ -18,9 +18,11 @@ module Webhukhs
         raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
 
+      event = {operation: :process, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name}
+
       webhook.with_lock do
         unless webhook.received?
-          Webhukhs.instrument(operation: :process, outcome: :skipped, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+          Webhukhs.instrument(event.merge(outcome: :skipped))
           return
         end
 
@@ -28,18 +30,18 @@ module Webhukhs
       end
 
       if webhook.handler.valid?(webhook.request)
-        Webhukhs.instrument(operation: :process, outcome: :started, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+        Webhukhs.instrument(**event.merge(outcome: :started))
         webhook.handler.process(webhook)
         webhook.processed! if webhook.processing?
-        Webhukhs.instrument(operation: :process, outcome: :completed, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+        Webhukhs.instrument(**event.merge(outcome: :completed))
       else
-        Webhukhs.instrument(operation: :process, outcome: :validation_failed, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+        Webhukhs.instrument(**event.merge(outcome: :validation_failed))
         webhook.failed_validation!
       end
     rescue => error
       if webhook.respond_to?(:error!)
         webhook.error!
-        Webhukhs.instrument(operation: :process, outcome: :error, severity: :error, error: error, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+        Webhukhs.instrument(**event.merge(outcome: :error, severity: :error, error: error))
       end
       raise
     end
