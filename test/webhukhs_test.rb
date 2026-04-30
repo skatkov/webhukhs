@@ -77,15 +77,6 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_nothing_raised { Webhukhs::Engine.load_generators }
   end
 
-  test "generated initializer subscribes error events to Rails error reporter" do
-    initializer_template = File.read(File.expand_path("../lib/webhukhs/templates/webhukhs.rb", __dir__))
-
-    assert_includes initializer_template, 'ActiveSupport::Notifications.subscribe("webhukhs.event")'
-    assert_includes initializer_template, "Rails.error.report"
-    assert_includes initializer_template, "payload.fetch(:severity, :error)"
-    refute_includes initializer_template, "error_context"
-  end
-
   test "accepts a webhook, stores and processes it" do
     tf = Tempfile.new
     body = {isValid: true, outputToFilename: tf.path}

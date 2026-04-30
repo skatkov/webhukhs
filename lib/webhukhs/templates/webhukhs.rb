@@ -33,15 +33,15 @@ Webhukhs.configure do |config|
 end
 
 # Webhukhs emits all observability data through a single ActiveSupport::Notifications event.
-# Error events are forwarded to Rails.error by default. You can customize this subscriber to
-# route events to logs, metrics, error reporters or any other observability system.
-ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
-  error = payload[:error]
-  next unless error
-
-  Rails.error.report(
-    error,
-    severity: payload.fetch(:severity, :error),
-    context: payload.except(:error, :severity)
-  )
-end
+# Subscribe to route events to logs, metrics, error reporters or any other observability system.
+#
+# ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
+#   error = payload[:error]
+#   next unless error
+#
+#   Rails.error.report(
+#     error,
+#     severity: payload.fetch(:severity, :error),
+#     context: payload.except(:error, :severity)
+#   )
+# end

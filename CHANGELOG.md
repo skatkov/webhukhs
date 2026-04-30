@@ -7,7 +7,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Emit webhook observability data through `ActiveSupport::Notifications` as a single `webhukhs.event` event instead of logging or reporting errors directly.
-- Generated initializers now include a customizable subscriber that forwards error events to `Rails.error`.
+- Generated initializers now include a commented subscriber example for forwarding error events to `Rails.error`.
 
 ### Removed
 - Removed `config.error_context`; add any custom error reporter context in your notification subscriber instead.
