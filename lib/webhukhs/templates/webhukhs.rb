@@ -36,12 +36,11 @@ end
 # Subscribe to route events to logs, metrics, error reporters or any other observability system.
 #
 # ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
-#   error = payload[:error]
-#   next unless error
+#   next unless payload[:severity] == :error
 #
 #   Rails.error.report(
-#     error,
-#     severity: payload.fetch(:severity, :error),
+#     payload.fetch(:error),
+#     severity: :error,
 #     context: payload.except(:error, :severity)
 #   )
 # end

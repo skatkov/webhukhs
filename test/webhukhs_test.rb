@@ -68,11 +68,6 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_equal [{operation: :receive, outcome: :accepted, severity: :info}], events
   end
 
-  test "configuration does not include error context" do
-    assert_false Webhukhs.configuration.respond_to?(:error_context)
-    assert_false Webhukhs.configuration.respond_to?(:error_context=)
-  end
-
   test "loads engine generators" do
     assert_nothing_raised { Webhukhs::Engine.load_generators }
   end

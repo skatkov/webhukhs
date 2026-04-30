@@ -23,11 +23,11 @@ module Webhukhs
       Webhukhs.instrument(operation: :receive, outcome: :unknown_handler, severity: :error, error: e, service_id: service_id)
       render_error_with_status("No handler found for #{service_id.inspect}", status: :not_found)
     rescue HandlerInactive => e
-      Webhukhs.instrument(operation: :receive, outcome: :inactive_handler, severity: :error, error: e, service_id: service_id, handler_class: handler.class.name)
+      Webhukhs.instrument(operation: :receive, outcome: :inactive_handler, severity: :error, error: e, service_id: service_id, handler_class: handler.to_s)
       render_error_with_status("Webhook handler #{service_id.inspect} is inactive", status: :service_unavailable)
     rescue => e
       event = {operation: :receive, outcome: :error, severity: :error, error: e, service_id: service_id}
-      event[:handler_class] = handler.class.name if handler
+      event[:handler_class] = handler.to_s if handler
       Webhukhs.instrument(event)
       raise unless handler
       raise if handler.expose_errors_to_sender?
