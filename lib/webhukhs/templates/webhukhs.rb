@@ -34,6 +34,19 @@ end
 
 # Webhukhs emits all observability data through a single ActiveSupport::Notifications event.
 # Subscribe to route events to logs, metrics, error reporters or any other observability system.
+#
+# @example schema for event payload
+# {
+#   operation: :receive | :process,
+#   outcome: :duplicate | :unknown_handler | :inactive_handler | :error |
+#            :discarded | :skipped | :started | :completed | :validation_failed,
+#   severity: :info | :warn | :error,
+#   error: Exception,             # only present for error events
+#   service_id: String,           # optional
+#   handler_class: String,        # optional
+#   handler_event_id: String,     # optional
+#   webhook_id: Integer | String  # optional
+# }
 ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
   next unless payload[:severity] == :error
 
