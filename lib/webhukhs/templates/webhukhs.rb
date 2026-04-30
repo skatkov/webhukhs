@@ -34,13 +34,12 @@ end
 
 # Webhukhs emits all observability data through a single ActiveSupport::Notifications event.
 # Subscribe to route events to logs, metrics, error reporters or any other observability system.
-#
-# ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
-#   next unless payload[:severity] == :error
-#
-#   Rails.error.report(
-#     payload.fetch(:error),
-#     severity: :error,
-#     context: payload.except(:error, :severity)
-#   )
-# end
+ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
+  next unless payload[:severity] == :error
+
+  Rails.error.report(
+    payload.fetch(:error),
+    severity: :error,
+    context: payload.except(:error, :severity)
+  )
+end
