@@ -15,21 +15,22 @@ module Webhukhs
     #
     # @return [void]
     def create
-      Rails.error.set_context(**Webhukhs.configuration.error_context)
       handler = lookup_handler(service_id)
       raise HandlerInactive unless handler.active?
       handler.handle(request)
       render(json: {ok: true, error: nil})
     rescue UnknownHandler => e
-      Rails.error.report(e, severity: :error)
+      Webhukhs.instrument(operation: :receive, outcome: :unknown_handler, severity: :error, error: e, service_id: service_id)
       render_error_with_status("No handler found for #{service_id.inspect}", status: :not_found)
     rescue HandlerInactive => e
-      Rails.error.report(e, severity: :error)
+      Webhukhs.instrument(operation: :receive, outcome: :inactive_handler, severity: :error, error: e, service_id: service_id, handler_class: handler.class.name)
       render_error_with_status("Webhook handler #{service_id.inspect} is inactive", status: :service_unavailable)
     rescue => e
+      event = {operation: :receive, outcome: :error, severity: :error, error: e, service_id: service_id}
+      event[:handler_class] = handler.class.name if handler
+      Webhukhs.instrument(event)
       raise unless handler
       raise if handler.expose_errors_to_sender?
-      Rails.error.report(e, severity: :error)
       render_error_with_status("Internal error (#{e})")
     end
 

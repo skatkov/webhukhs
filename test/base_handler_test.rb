@@ -73,7 +73,7 @@ class BaseHandlerTest < ActiveSupport::TestCase
     end
   end
 
-  test "handle logs duplicate deliveries" do
+  test "handle emits duplicate delivery events" do
     handler = ExtractIdHandler.new
     request_headers = {
       "CONTENT_TYPE" => "application/json",
@@ -86,11 +86,17 @@ class BaseHandlerTest < ActiveSupport::TestCase
 
     handler.handle(first_request)
 
-    with_captured_info_logs(Rails) do |messages|
+    events = captured_webhukhs_events do
       handler.handle(second_request)
-
-      assert_equal ["#{handler.inspect} Webhook duplicate-event is a duplicate delivery and will not be stored."], messages
     end
+
+    assert_equal 1, events.size
+    event = events.fetch(0)
+    assert_equal :receive, event.fetch(:operation)
+    assert_equal :duplicate, event.fetch(:outcome)
+    assert_equal :warn, event.fetch(:severity)
+    assert_equal "ExtractIdHandler", event.fetch(:handler_class)
+    assert_false event.key?(:handler_event_id)
   end
 
   test "enqueue uses configured processing job classes directly" do

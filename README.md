@@ -72,16 +72,37 @@ This project depends on two dependencies:
 - Ruby >= 3.0
 - Rails >= 7.0
 
-## Error reporter
+## Notifications
 
-This gem uses [Rails common error reporter](https://guides.rubyonrails.org/error_reporting.html) to report any possible error to services like Honeybadger, Appsignal, Sentry and etc. Most of those services already support this common interface, if not - it's not that hard to add this support on your own.
+Webhukhs emits observability data through a single ActiveSupport notification: `webhukhs.event`.
 
-It's possible to provide additional context for every error. e.g.
+The generated initializer subscribes to error events and forwards them to [Rails common error reporter](https://guides.rubyonrails.org/error_reporting.html) by default:
 
 ```ruby
-Webhukhs.configure do |config|
-  config.error_context = { appsignal: { namespace: "webhooks" } }
+ActiveSupport::Notifications.subscribe("webhukhs.event") do |_name, _started, _finished, _id, payload|
+  error = payload[:error]
+  next unless error
+
+  Rails.error.report(
+    error,
+    severity: payload.fetch(:severity, :error),
+    context: payload.except(:error, :severity)
+  )
 end
+```
+
+You can replace or extend that subscriber to route events to logs, metrics, error reporters or any other observability system. Event payloads include structured non-sensitive metadata when available:
+
+```ruby
+{
+  operation: :receive,
+  outcome: :unknown_handler,
+  severity: :error,
+  error: error,
+  service_id: "stripe",
+  handler_class: "StripeHandler",
+  webhook_id: 123
+}
 ```
 
 ## Development

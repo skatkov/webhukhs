@@ -8,11 +8,8 @@ module Webhukhs
     # Raised when the job receives an invalid webhook argument.
     class InvalidWebhookArgument < StandardError; end
 
-    discard_on ActiveJob::DeserializationError, InvalidWebhookArgument do |job, error|
-      Rails.error.report(error, context: {
-        job_id: job.job_id,
-        arguments: job.arguments.map(&:inspect)
-      }, severity: :error)
+    discard_on ActiveJob::DeserializationError, InvalidWebhookArgument do |_job, error|
+      Webhukhs.instrument(operation: :process, outcome: :discarded, severity: :error, error: error)
     end
 
     # Runs webhook validation and processing lifecycle.
@@ -25,11 +22,9 @@ module Webhukhs
         raise InvalidWebhookArgument, "ProcessingJob expected Webhukhs::ReceivedWebhook, got #{webhook.class}"
       end
 
-      webhook_details_for_logs = "Webhukhs::ReceivedWebhook#%s (handler: %s)" % [webhook.id, webhook.handler]
-
       webhook.with_lock do
         unless webhook.received?
-          logger.info { "#{webhook_details_for_logs} is being processed in a different job or has been processed already, skipping." }
+          Webhukhs.instrument(operation: :process, outcome: :skipped, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
           return
         end
 
@@ -37,16 +32,19 @@ module Webhukhs
       end
 
       if webhook.handler.valid?(webhook.request)
-        logger.info { "#{webhook_details_for_logs} starting to process" }
+        Webhukhs.instrument(operation: :process, outcome: :started, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
         webhook.handler.process(webhook)
         webhook.processed! if webhook.processing?
-        logger.info { "#{webhook_details_for_logs} processed" }
+        Webhukhs.instrument(operation: :process, outcome: :completed, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
       else
-        logger.info { "#{webhook_details_for_logs} did not pass validation by the handler. Marking it `failed_validation`." }
+        Webhukhs.instrument(operation: :process, outcome: :validation_failed, severity: :info, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
         webhook.failed_validation!
       end
-    rescue
-      webhook.error! if webhook.respond_to?(:error!)
+    rescue => error
+      if webhook.respond_to?(:error!)
+        webhook.error!
+        Webhukhs.instrument(operation: :process, outcome: :error, severity: :error, error: error, webhook_id: webhook.id, handler_class: webhook.handler_module_name)
+      end
       raise
     end
   end

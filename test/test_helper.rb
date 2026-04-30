@@ -68,20 +68,17 @@ class ActiveSupport::TestCase
     with_overridden_singleton_methods(target, {method_name => implementation}, &block)
   end
 
-  def with_captured_info_logs(logger_owner)
-    messages = []
-    original_logger = logger_owner.logger
-    test_logger = ActiveSupport::Logger.new(StringIO.new)
-    test_logger.level = Logger::INFO
-    test_logger.formatter = lambda do |_severity, _time, _progname, message|
-      messages << message
-      ""
+  def captured_webhukhs_events
+    events = []
+    subscriber = lambda do |*args|
+      events << ActiveSupport::Notifications::Event.new(*args).payload
     end
 
-    logger_owner.logger = test_logger
-    yield messages
-  ensure
-    logger_owner.logger = original_logger
+    ActiveSupport::Notifications.subscribed(subscriber, "webhukhs.event") do
+      yield
+    end
+
+    events
   end
 
   def with_overridden_singleton_methods(target, methods)
