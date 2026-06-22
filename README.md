@@ -25,7 +25,7 @@ Mount webhukhs engine in `config/routes.rb` file (simple approach, with only one
 mount Webhukhs::Engine, at: "/webhooks"
 ```
 
-Advanced mounting approach (all webhooks paths will shown in `rails routes`)
+Advanced mounting approach (all webhooks paths will be shown in `rails routes`)
 
 ```ruby
 Webhukhs.configuration.active_handlers.each_key do |service_id|
