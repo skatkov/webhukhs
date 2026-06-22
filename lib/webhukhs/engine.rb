@@ -17,9 +17,5 @@ module Webhukhs
     generators do
       require_relative "install_generator"
     end
-
-    routes do
-      post "/:service_id" => "received_webhooks#create"
-    end
   end
 end
