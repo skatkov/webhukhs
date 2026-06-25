@@ -11,6 +11,7 @@ AllValidators:
   # Global file exclusion patterns
   Exclude:
     - '\.git'
+    - 'lib/webhukhs/engine.rb'
     - 'vendor/**/*'
     - 'node_modules/**/*'
     - 'spec/**/*'

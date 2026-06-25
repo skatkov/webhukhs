@@ -19,10 +19,21 @@ Generate migrations and initializer file.
 
 `bin/rails g webhukhs:install`
 
-Mount webhukhs engine in your routes.
+Mount webhukhs engine in `config/routes.rb` file (simple approach, with only one dynamic route showing up in `rails routes`)
 
 ```ruby
 mount Webhukhs::Engine, at: "/webhooks"
+```
+
+Advanced mounting approach (all webhooks paths will be shown in `rails routes`)
+
+```ruby
+Webhukhs.configuration.active_handlers.each_key do |service_id|
+  post "/webhooks/#{service_id}",
+    to: "webhukhs/receive_webhooks#create",
+    defaults: { service_id: service_id },
+    as: :"#{service_id.tr('-', '_')}_webhook"
+end
 ```
 
 Define a class for your first handler (let's call it `ExampleHandler`) and inherit it from `Webhukhs::BaseHandler`. We recommend `app/webhooks`, but any place known to autoloading will do.
@@ -63,7 +74,7 @@ Now you will be able to accept webhooks on `/webhooks/example` path.
 
 ## More Examples
 - `example` folder contains a demo app with engine fully configured.
-- We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`. 
+- We provide a number of webhook handlers which demonstrate certain features of Webhukhs. You will find them in `handler-examples`.
 
 ## Requirements
 
