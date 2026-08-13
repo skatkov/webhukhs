@@ -1,21 +1,25 @@
-You are working in a Ruby project that uses mutation testing.
+You are working in a Ruby project that uses mutation testing, but also tracks line and branch coverage.
 
 ## Goal
 
-Achieve 100% mutation coverage. Verify with:
+Achieve 100% line, branch and mutation coverage. Verify with:
+
+```
+SIMPLECOV=1 bundle exec rspec
+```
 
 ```
 bundle exec mutant run
 ```
 
-When iterating, prefer `--fail-fast` so you address one surviving
+When iterating mutant coverage, prefer `--fail-fast` so you address one surviving
 mutant at a time:
 
 ```
 bundle exec mutant run --fail-fast
 ```
 
-## When you find an alive mutation
+## When you find coverage issue
 
 Decide which bucket it falls into:
 
@@ -36,16 +40,10 @@ the user.
 
 ## Constraints
 
-- Line coverage must stay at 100%. Verify with:
-
-  ```
-  SIMPLECOV=1 bundle exec rspec
-  ```
-
 - You may not skip mutants by configuring mutant to ignore them.
   No `expressions:` filters, no `coverage_criteria:` tweaks.
 - You may not use `send` or `__send__` to invoke private methods
-  in tests just to satisfy mutant.
+  in tests just to satisfy coverage requirement.
 - You may not stub or mock the system under test (`Age`).
 
 ## Done
