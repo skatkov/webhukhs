@@ -32,12 +32,6 @@ Decide which bucket it falls into:
 Decide between A) and B) before changing anything. If unsure, ask
 the user.
 
-## What you may change
-
-- `lib/age.rb` -- the implementation. Multiple designs are valid.
-- `spec/age_spec.rb` -- the tests. Some existing tests are bad and
-  may be rewritten or replaced.
-
 ## Constraints
 
 - You may not skip mutants by configuring mutant to ignore them.
