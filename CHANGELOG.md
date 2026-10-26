@@ -5,6 +5,9 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+### Fixed
+- Generate a `(created_at, id)` index migration to speed up the admin listing.
+
 ## 0.8.0
 ## Added
 - An optional, read-only admin engine (`require "webhukhs/admin"`, mount `Webhukhs::Admin::Engine`) to list,
