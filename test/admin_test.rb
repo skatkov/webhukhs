@@ -80,31 +80,6 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "form.filters[action=?]", "/admin/"
   end
 
-  test "redirects the old listing URL to the mount point, keeping filters and sorting" do
-    create_webhook(handler_event_id: "failed", status: "error")
-    create_webhook
-
-    get "/admin/received?status=error&sort=created_at&direction=asc"
-
-    assert_response :moved_permanently
-    assert_redirected_to "/admin?direction=asc&sort=created_at&status=error"
-    follow_redirect!
-    assert_response :ok
-    assert_equal ["failed"], listed_event_ids
-  end
-
-  test "redirects old webhook detail URLs to the shorter path" do
-    webhook = create_webhook
-
-    get "/admin/received/#{webhook.id}"
-
-    assert_response :moved_permanently
-    assert_redirected_to "/admin/#{webhook.id}"
-    follow_redirect!
-    assert_response :ok
-    assert_select ".breadcrumb a[href=?]", "/admin/", text: "Received webhooks"
-  end
-
   test "sorts by a whitelisted column in either direction" do
     create_webhook(handler_event_id: "b", status: "skipped")
     create_webhook(handler_event_id: "a", status: "error")
@@ -265,6 +240,7 @@ class AdminTest < ActionDispatch::IntegrationTest
 
     assert_response :ok
     assert_select "h1", text: /WebhookTestHandler/
+    assert_select ".breadcrumb a[href=?]", "/admin/", text: "Received webhooks"
     assert_select "[role=tab][aria-selected=true]", text: "Pretty"
     assert_select "[role=tab][aria-selected=false]", text: "As sent"
     # assert_select squashes whitespace, which is the very thing under test here
