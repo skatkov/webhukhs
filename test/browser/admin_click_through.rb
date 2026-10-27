@@ -89,7 +89,7 @@ class AdminClickThrough < ActiveSupport::TestCase
     PAGE_SIZE.times { |i| create_webhook(handler_event_id: "evt-#{i}", created_at: i.minutes.ago) }
     create_webhook(handler_event_id: "the-failed-one", status: "error", created_at: 2.days.ago)
 
-    visit "/received"
+    visit ""
     assert_equal "Received webhooks", @browser.at_css("h1").text
     # The stylesheet must have made it through the CSP - unstyled, the header would not be a flexbox
     assert_equal "flex", @browser.evaluate("getComputedStyle(document.querySelector('.admin-header')).display")
@@ -129,18 +129,18 @@ class AdminClickThrough < ActiveSupport::TestCase
   test "opens a webhook by clicking anywhere on its row" do
     webhook = create_webhook(handler_event_id: "evt-clicked")
 
-    visit "/received"
+    visit ""
     # The status cell is not a link, but the row link stretched over it takes the click
     click_and_wait_for_page(@browser.at_css("tbody tr td:nth-child(4)"))
 
-    assert @browser.current_url.end_with?("/received/#{webhook.id}"), @browser.current_url
+    assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
     assert_includes @browser.at_css("h1").text, "WebhookTestHandler"
   end
 
   test "switches between the pretty and the as-sent body" do
     webhook = create_webhook(body: '{"event":"thing.happened","data":{"id":1}}')
 
-    visit "/received/#{webhook.id}"
+    visit "/#{webhook.id}"
     pretty = -> { @browser.evaluate("document.getElementById('body-pretty').hidden") == false }
     raw = -> { @browser.evaluate("document.getElementById('body-raw').hidden") == false }
     assert pretty.call
@@ -161,7 +161,7 @@ class AdminClickThrough < ActiveSupport::TestCase
   test "copies to the clipboard" do
     webhook = create_webhook(handler_event_id: "evt-to-copy")
 
-    visit "/received/#{webhook.id}"
+    visit "/#{webhook.id}"
     # Headless Chrome has no clipboard to grant, so we only check that the right text gets handed to it
     @browser.execute("navigator.clipboard.writeText = (text) => { window.copied = text; return Promise.resolve() }")
 
@@ -178,19 +178,19 @@ class AdminClickThrough < ActiveSupport::TestCase
     form = create_webhook(body: "event=paid&amount=12.50")
     large = create_webhook(body: "x" * (Webhukhs::Admin::ReceivedWebhookPresenter::DISPLAY_LIMIT + 1))
 
-    visit "/received/#{form.id}"
+    visit "/#{form.id}"
     assert_equal "This body is not valid JSON, so it is shown as it was sent", @browser.at_css(".flash.alert").text
     assert_equal "event=paid&amount=12.50", @browser.at_css("pre.body-raw code").text
     assert_empty @browser.css("[role=tab]")
 
-    visit "/received/#{large.id}"
+    visit "/#{large.id}"
     assert_equal "The body was 256 KB, display is truncated", @browser.at_css(".flash.alert").text
   end
 
   test "picks up new webhooks while auto-refresh is on, and remembers the switch" do
     create_webhook(handler_event_id: "evt-before")
 
-    visit "/received"
+    visit ""
     switch = -> { @browser.evaluate("document.getElementById('auto-refresh').checked") }
     refute switch.call
     @browser.at_css("label.switch").click
@@ -201,7 +201,7 @@ class AdminClickThrough < ActiveSupport::TestCase
     wait_for("the new webhook to show up", timeout: 8) { texts("tbody tr td:nth-child(5)").include?("evt-arrived") }
     assert_equal ["evt-arrived", "evt-before"], texts("tbody tr td:nth-child(5)")
 
-    visit "/received"
+    visit ""
     assert switch.call, "The switch should stay on after a reload"
     # After a page load only the timer refetches, so this one has to come in through a poll
     create_webhook(handler_event_id: "evt-polled")

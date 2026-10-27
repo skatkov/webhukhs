@@ -92,6 +92,9 @@ Rails.application.routes.draw do
 end
 ```
 
+The list lives at the mount point itself (`/admin/webhooks` above), with each webhook at
+`/admin/webhooks/:id`. Old `/received` URLs redirect to these shorter paths.
+
 The admin does no authentication of its own, and webhook bodies tend to carry personal data and
 secrets - so mount it behind whatever guards the rest of your admin. For example, with Devise:
 
