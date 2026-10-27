@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+# Public namespace for Webhukhs runtime and configuration.
 module Webhukhs
+  # Read-only administration for received webhooks.
   module Admin
     # Lists and shows stored webhooks. Read-only: the lifecycle belongs to Webhukhs::ProcessingJob.
     class ReceivedWebhooksController < ApplicationController
       # Webhooks per index page
       PAGE_SIZE = 50
-      # Columns the index can be sorted by
+      # Additional sortable columns beyond the default id order
       SORTABLE_COLUMNS = %w[created_at updated_at handler_module_name handler_event_id status].freeze
 
       helper_method :handler_options, :status_options
@@ -15,7 +17,7 @@ module Webhukhs
       #
       # @return [void]
       def index
-        @sort = params[:sort].presence_in(SORTABLE_COLUMNS) || "created_at"
+        @sort = params[:sort].presence_in(SORTABLE_COLUMNS) || "id"
         @direction = (params[:direction] == "asc") ? "asc" : "desc"
         @page = [params[:page].to_i, 1].max
 
@@ -25,7 +27,7 @@ module Webhukhs
         # to return them in a different order for every OFFSET - rows then repeat or vanish between pages
         rows = ReceivedWebhook
           .where(filters)
-          .order(@sort => @direction, :id => @direction)
+          .order(@sort => @direction, "id" => @direction)
           .offset((@page - 1) * PAGE_SIZE)
           .limit(PAGE_SIZE + 1)
         @next_page = @page + 1 if rows.length > PAGE_SIZE

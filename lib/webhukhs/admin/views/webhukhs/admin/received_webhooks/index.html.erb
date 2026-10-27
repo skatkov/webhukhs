@@ -19,6 +19,7 @@
 
 <%
   columns = [
+    ["Id", "id"],
     ["Received", "created_at"],
     ["Handler", "handler_module_name"],
     ["Status", "status"],
@@ -28,7 +29,7 @@
 %>
 <div id="received-webhooks">
 <%# The id cell carries the link, and the CSS stretches it over the whole row %>
-<%= admin_table(["Id"] + columns, @webhooks) do |webhook|
+<%= admin_table(columns, @webhooks) do |webhook|
   [
     link_to(tag.code(webhook.id, class: "cell-ellipsis cell-id", title: webhook.id), received_webhook_path(webhook), class: "row-link"),
     time_tag(webhook.created_at, webhook.created_at.iso8601),

@@ -94,6 +94,10 @@ class AdminClickThrough < ActiveSupport::TestCase
     # The stylesheet must have made it through the CSP - unstyled, the header would not be a flexbox
     assert_equal "flex", @browser.evaluate("getComputedStyle(document.querySelector('.admin-header')).display")
     assert_equal PAGE_SIZE, @browser.css("tbody tr").length
+    assert_equal "the-failed-one", texts("tbody tr td:nth-child(5)").first
+
+    click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Received')]"))
+    assert_includes @browser.current_url, "direction=desc"
     assert_equal "evt-0", texts("tbody tr td:nth-child(5)").first
 
     click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Received')]"))

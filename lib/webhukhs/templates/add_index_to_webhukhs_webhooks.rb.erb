@@ -1,5 +1,0 @@
-class AddIndexToWebhukhsWebhooks < ActiveRecord::Migration<%= migration_version %>
-  def change
-    add_index :received_webhooks, [:created_at, :id]
-  end
-end

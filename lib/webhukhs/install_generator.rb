@@ -17,7 +17,6 @@ module Webhukhs
     def create_migration_file
       migration_template "create_webhukhs_tables.rb.erb", File.join(db_migrate_path, "create_webhukhs_tables.rb")
       migration_template "add_headers_to_webhukhs_webhooks.rb.erb", File.join(db_migrate_path, "add_headers_to_webhukhs_webhooks.rb")
-      migration_template "add_index_to_webhukhs_webhooks.rb.erb", File.join(db_migrate_path, "add_index_to_webhukhs_webhooks.rb")
     end
 
     # Copies initializer file into host application.

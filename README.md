@@ -19,8 +19,6 @@ Generate migrations and initializer file.
 
 `bin/rails g webhukhs:install`
 
-Apply the generated migrations with `bin/rails db:migrate`.
-
 Mount webhukhs engine in `config/routes.rb` file (simple approach, with only one dynamic route showing up in `rails routes`)
 
 ```ruby
@@ -123,19 +121,9 @@ no build step.
 To try it out, run `bin/dev` from a checkout of this repository. It starts the app in `example`
 with some webhooks seeded, and the admin at http://localhost:3000/admin/webhukhs.
 
-### Upgrading existing installations
-
-The default admin listing needs an index on `(created_at, id)` to avoid scanning and sorting all
-received webhooks. New installations generate this index automatically. Existing applications should
-generate and apply the new `add_index_to_webhukhs_webhooks` migration after updating the gem:
-
-```sh
-bin/rails generate webhukhs:install --skip
-bin/rails db:migrate
-```
-
-`--skip` preserves existing migrations and your initializer. On a large SQLite database, building the
-index can temporarily block writes; run the migration during a low-traffic period.
+The list defaults to descending ID order using the existing primary-key index; no extra migration is
+needed. ID order is not necessarily chronological with random UUIDs or custom IDs. Click **Received**
+to sort by timestamp instead.
 
 ## More Examples
 - `example` folder contains a demo app with the engine and the admin fully configured - run it with `bin/dev`.

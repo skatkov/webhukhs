@@ -6,7 +6,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## Unreleased
 
 ### Fixed
-- Generate a `(created_at, id)` index migration to speed up the admin listing.
+- Sort the admin listing by ID by default to avoid a full-table sort.
 
 ## 0.8.0
 ## Added

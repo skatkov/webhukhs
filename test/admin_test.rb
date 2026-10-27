@@ -23,19 +23,39 @@ class AdminTest < ActionDispatch::IntegrationTest
     css_select("table.admin-table tbody tr td:nth-child(5) code").map(&:text)
   end
 
-  test "lists webhooks newest first by default" do
-    create_webhook(handler_event_id: "old", created_at: 2.days.ago)
-    create_webhook(handler_event_id: "new", created_at: 1.day.ago)
+  test "lists webhooks by descending id regardless of received time by default" do
+    create_webhook(handler_event_id: "first", created_at: 1.day.ago)
+    create_webhook(handler_event_id: "last", created_at: 2.days.ago)
 
     get "/admin/received"
 
     assert_response :ok
-    assert_equal ["new", "old"], listed_event_ids
+    assert_equal ["last", "first"], listed_event_ids
     # The whole row is the link, so it has to be there in the first cell
     assert_select "tbody tr td:first-child a.row-link[href^='/admin/received/']", count: 2
-    assert_select "th a.sort-link[href=?]", "/admin/received?direction=asc&sort=created_at", text: "Received ▼"
+    assert_select "th a.sort-link[href=?]", "/admin/received?direction=asc&sort=id", text: "Id ▼"
+    assert_select "th a.sort-link[href=?]", "/admin/received?direction=desc&sort=created_at", text: "Received"
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
     assert_select "th a.sort-link[href=?]", "/admin/received?direction=desc&sort=status", text: "Status"
+  end
+
+  test "sorts by id in ascending order when requested" do
+    create_webhook(handler_event_id: "first", created_at: 1.day.ago)
+    create_webhook(handler_event_id: "last", created_at: 2.days.ago)
+
+    get "/admin/received", params: {sort: "id", direction: "asc"}
+
+    assert_equal ["first", "last"], listed_event_ids
+    assert_select "th a.sort-link[href=?]", "/admin/received?direction=desc&sort=id", text: "Id ▲"
+  end
+
+  test "still sorts by received time when explicitly requested" do
+    create_webhook(handler_event_id: "new", created_at: 1.day.ago)
+    create_webhook(handler_event_id: "old", created_at: 2.days.ago)
+
+    get "/admin/received", params: {sort: "created_at"}
+
+    assert_equal ["new", "old"], listed_event_ids
   end
 
   test "offers an auto-refresh switch, off by default, for the listing it refetches" do
@@ -85,15 +105,15 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_equal ["z", "a"], listed_event_ids
   end
 
-  test "ignores sort columns and directions it does not know" do
-    # Created out of order, so that falling back to anything but created_at shows
-    create_webhook(handler_event_id: "new", created_at: 1.day.ago, status: "skipped")
-    create_webhook(handler_event_id: "old", created_at: 2.days.ago, status: "error")
+  test "ignores unsupported sort columns and directions" do
+    # Creation order differs from received time, so the fallback must use id.
+    create_webhook(handler_event_id: "new", created_at: 1.day.ago, status: "skipped", body: "z")
+    create_webhook(handler_event_id: "old", created_at: 2.days.ago, status: "error", body: "a")
 
-    get "/admin/received", params: {sort: "no_such_column", direction: "sideways"}
+    get "/admin/received", params: {sort: "body", direction: "sideways"}
 
     assert_response :ok
-    assert_equal ["new", "old"], listed_event_ids
+    assert_equal ["old", "new"], listed_event_ids
   end
 
   test "filters by handler and status, and treats blank filters as no filter" do
@@ -119,7 +139,7 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "select[name=handler] option[value='']", text: "Any handler"
     assert_select "select[name=status] option[value='']", text: "Any status"
     # Clearing the filters keeps the sort
-    assert_select "form.filters a[href=?]", "/admin/received?direction=desc&sort=created_at", text: "Clear"
+    assert_select "form.filters a[href=?]", "/admin/received?direction=desc&sort=id", text: "Clear"
     assert_select "select[name=handler] option[selected]", text: "PrivateHandler"
 
     statuses = css_select("select[name=status] option").map { |option| option["value"] }
