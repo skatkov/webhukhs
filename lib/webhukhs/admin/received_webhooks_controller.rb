@@ -8,8 +8,6 @@ module Webhukhs
     class ReceivedWebhooksController < ApplicationController
       # Webhooks per index page
       PAGE_SIZE = 50
-      # Additional sortable columns beyond the default id order
-      SORTABLE_COLUMNS = %w[created_at updated_at handler_module_name handler_event_id status].freeze
 
       helper_method :handler_options, :status_options
 
@@ -17,17 +15,14 @@ module Webhukhs
       #
       # @return [void]
       def index
-        @sort = params[:sort].presence_in(SORTABLE_COLUMNS) || "id"
         @direction = (params[:direction] == "asc") ? "asc" : "desc"
         @page = [params[:page].to_i, 1].max
 
         filters = {handler_module_name: params[:handler], status: params[:status]}.compact_blank
 
-        # Most columns have plenty of ties (status especially), and without a tiebreaker the DB is free
-        # to return them in a different order for every OFFSET - rows then repeat or vanish between pages
         rows = ReceivedWebhook
           .where(filters)
-          .order(@sort => @direction, "id" => @direction)
+          .order(id: @direction)
           .offset((@page - 1) * PAGE_SIZE)
           .limit(PAGE_SIZE + 1)
         @next_page = @page + 1 if rows.length > PAGE_SIZE

@@ -22,19 +22,14 @@ module Webhukhs
         tag.div(tag.table(safe_join([thead, tag.tbody(safe_join(rows))]), class: "admin-table"), class: "table-scroll")
       end
 
-      # Column header linking to the index sorted by that column. Clicking the active column
-      # flips the direction, any other column starts out descending.
+      # ID column header linking to the index with the sort direction reversed.
       #
-      # @param label [String] header text
-      # @param column [String] column to sort by
-      # @param sort [String] currently sorted column
       # @param direction [String] current direction, "asc" or "desc"
       # @return [ActiveSupport::SafeBuffer]
-      def sort_link(label, column, sort:, direction:)
-        active = column == sort
-        next_direction = (active && direction == "desc") ? "asc" : "desc"
-        query = request.query_parameters.except("page").merge("sort" => column, "direction" => next_direction)
-        label = safe_join([label, tag.span((direction == "asc") ? "▲" : "▼", class: "sort-arrow")], " ") if active
+      def sort_link(direction:)
+        next_direction = (direction == "desc") ? "asc" : "desc"
+        query = request.query_parameters.except("page", "sort").merge("direction" => next_direction)
+        label = safe_join(["Id", tag.span((direction == "asc") ? "▲" : "▼", class: "sort-arrow")], " ")
         link_to(label, query, class: "sort-link")
       end
 

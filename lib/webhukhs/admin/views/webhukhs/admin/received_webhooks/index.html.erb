@@ -9,23 +9,22 @@
 </div>
 
 <%= form_tag received_webhooks_path, method: :get, class: "filters" do %>
-  <%= hidden_field_tag :sort, @sort, id: nil %>
   <%= hidden_field_tag :direction, @direction, id: nil %>
   <%= select_tag :handler, options_for_select([["Any handler", ""]] + handler_options, params[:handler]), "aria-label": "Handler" %>
   <%= select_tag :status, options_for_select([["Any status", ""]] + status_options.map { |status, _| [status.humanize, status] }, params[:status]), "aria-label": "Status" %>
   <%= submit_tag "Filter", name: nil %>
-  <%= link_to "Clear", received_webhooks_path(sort: @sort, direction: @direction) %>
+  <%= link_to "Clear", received_webhooks_path(direction: @direction) %>
 <% end %>
 
 <%
   columns = [
-    ["Id", "id"],
-    ["Received", "created_at"],
-    ["Handler", "handler_module_name"],
-    ["Status", "status"],
-    ["Event id", "handler_event_id"],
-    ["Updated", "updated_at"]
-  ].map { |label, column| sort_link(label, column, sort: @sort, direction: @direction) }
+    sort_link(direction: @direction),
+    "Received",
+    "Handler",
+    "Status",
+    "Event id",
+    "Updated"
+  ]
 %>
 <div id="received-webhooks">
 <%# The id cell carries the link, and the CSS stretches it over the whole row %>

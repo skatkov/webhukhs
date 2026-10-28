@@ -124,8 +124,10 @@ no build step.
 To try it out, run `bin/dev` from a checkout of this repository. It starts the app in `example`
 with some webhooks seeded, and the admin at http://localhost:3000/admin/webhukhs.
 
-The list defaults to descending ID order using the existing primary-key index; no extra migration is
-needed. Click **Received** to sort by timestamp instead.
+The list sorts only by ID, descending by default, using the existing primary-key index; no extra
+migration is needed. Click **ID** to switch between ascending and descending order. Other columns
+are not sortable, avoiding expensive sorts on large webhook tables. Handler and status filters are
+still available.
 
 **We strongly recommend against UUIDv4 primary keys.** Use UUIDv7 or auto-incrementing integer IDs
 instead. UUIDv4 IDs are random, so sorting by ID does not reflect creation time, and inserts have

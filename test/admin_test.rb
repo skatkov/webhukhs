@@ -33,29 +33,33 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_equal ["last", "first"], listed_event_ids
     # The whole row is the link, so it has to be there in the first cell
     assert_select "tbody tr td:first-child a.row-link[href^='/admin/']", count: 2
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=asc&sort=id", text: "Id ▼"
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc&sort=created_at", text: "Received"
+    assert_select "th a.sort-link[href=?]", "/admin/?direction=asc", text: "Id ▼"
+    assert_select "th a", count: 1
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc&sort=status", text: "Status"
+    assert_equal ["Id ▼", "Received", "Handler", "Status", "Event id", "Updated"], css_select("th").map(&:text)
   end
 
   test "sorts by id in ascending order when requested" do
     create_webhook(handler_event_id: "first", created_at: 1.day.ago)
     create_webhook(handler_event_id: "last", created_at: 2.days.ago)
 
-    get "/admin", params: {sort: "id", direction: "asc"}
+    get "/admin", params: {direction: "asc"}
 
     assert_equal ["first", "last"], listed_event_ids
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc&sort=id", text: "Id ▲"
+    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc", text: "Id ▲"
   end
 
-  test "still sorts by received time when explicitly requested" do
-    create_webhook(handler_event_id: "new", created_at: 1.day.ago)
-    create_webhook(handler_event_id: "old", created_at: 2.days.ago)
+  test "ignores legacy sort columns in either direction" do
+    create_webhook(handler_event_id: "z", status: "skipped", created_at: 1.day.ago, updated_at: 1.hour.ago)
+    create_webhook(handler_event_id: "a", handler_module_name: "PrivateHandler", status: "error", created_at: 2.days.ago, updated_at: 2.hours.ago)
 
-    get "/admin", params: {sort: "created_at"}
+    %w[created_at updated_at handler_module_name handler_event_id status].each do |column|
+      get "/admin", params: {sort: column, direction: "desc"}
+      assert_equal ["a", "z"], listed_event_ids, column
 
-    assert_equal ["new", "old"], listed_event_ids
+      get "/admin", params: {sort: column, direction: "asc"}
+      assert_equal ["z", "a"], listed_event_ids, column
+    end
   end
 
   test "offers an auto-refresh switch, off by default, for the listing it refetches" do
@@ -78,33 +82,6 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_equal ["at-root"], listed_event_ids
     assert_select ".admin-header a[href=?]", "/admin/", text: "Received webhooks"
     assert_select "form.filters[action=?]", "/admin/"
-  end
-
-  test "sorts by a whitelisted column in either direction" do
-    create_webhook(handler_event_id: "b", status: "skipped")
-    create_webhook(handler_event_id: "a", status: "error")
-
-    get "/admin", params: {sort: "status", direction: "asc"}
-    assert_equal ["a", "b"], listed_event_ids
-    # Clicking the active column again flips the direction
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc&sort=status", text: "Status ▲"
-
-    get "/admin", params: {sort: "status", direction: "desc"}
-    assert_equal ["b", "a"], listed_event_ids
-  end
-
-  test "breaks ties by id in the sort direction, so pages do not overlap" do
-    # Event ids run opposite to ids: SQLite walks the dedup index on (handler_module_name,
-    # handler_event_id) to sort by handler, and would order the ties by event id otherwise
-    first = create_webhook(handler_event_id: "z")
-    second = create_webhook(handler_event_id: "a")
-    assert_operator first.id, :<, second.id
-
-    get "/admin", params: {sort: "handler_module_name", direction: "desc"}
-    assert_equal ["a", "z"], listed_event_ids
-
-    get "/admin", params: {sort: "handler_module_name", direction: "asc"}
-    assert_equal ["z", "a"], listed_event_ids
   end
 
   test "ignores unsupported sort columns and directions" do
@@ -134,14 +111,16 @@ class AdminTest < ActionDispatch::IntegrationTest
   end
 
   test "offers every configured handler and status as a filter" do
-    get "/admin", params: {handler: "PrivateHandler"}
+    get "/admin", params: {handler: "PrivateHandler", direction: "asc"}
 
     handlers = css_select("select[name=handler] option").map { |option| option["value"] }
     assert_equal ["", *Webhukhs.configuration.active_handlers.values.uniq.sort], handlers
     assert_select "select[name=handler] option[value='']", text: "Any handler"
     assert_select "select[name=status] option[value='']", text: "Any status"
-    # Clearing the filters keeps the sort
-    assert_select "form.filters a[href=?]", "/admin/?direction=desc&sort=id", text: "Clear"
+    # Filtering and clearing the filters keep the direction, without a sort column
+    assert_select "form.filters input[name=direction][value=asc]"
+    assert_select "form.filters input[name=sort]", count: 0
+    assert_select "form.filters a[href=?]", "/admin/?direction=asc", text: "Clear"
     assert_select "select[name=handler] option[selected]", text: "PrivateHandler"
 
     statuses = css_select("select[name=status] option").map { |option| option["value"] }
@@ -164,16 +143,16 @@ class AdminTest < ActionDispatch::IntegrationTest
     page_size = Webhukhs::Admin::ReceivedWebhooksController::PAGE_SIZE
     (page_size + 1).times { |i| create_webhook(handler_event_id: "evt-#{i}", created_at: i.minutes.ago) }
 
-    get "/admin", params: {sort: "status"}
+    get "/admin", params: {direction: "asc"}
     assert_equal page_size, listed_event_ids.length
-    assert_equal "evt-#{page_size}", listed_event_ids.first # all ties on status, so by id
+    assert_equal (0...page_size).map { |i| "evt-#{i}" }, listed_event_ids
     assert_select "a[rel=prev]", count: 0
-    assert_select "a[rel=next][href=?]", "/admin/?page=2&sort=status"
+    assert_select "a[rel=next][href=?]", "/admin/?direction=asc&page=2"
 
-    get "/admin", params: {sort: "status", page: 2}
-    assert_equal ["evt-0"], listed_event_ids
+    get "/admin", params: {direction: "asc", page: 2}
+    assert_equal ["evt-#{page_size}"], listed_event_ids
     assert_select "a[rel=next]", count: 0
-    assert_select "a[rel=prev][href=?]", "/admin/?page=1&sort=status"
+    assert_select "a[rel=prev][href=?]", "/admin/?direction=asc&page=1"
   end
 
   test "loads one row past the page and no more" do
@@ -206,10 +185,10 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "a[rel=prev]", count: 0
   end
 
-  test "drops the page when changing the sort" do
-    get "/admin", params: {page: 3}
+  test "keeps filters but drops the page and legacy sort when reversing the order" do
+    get "/admin", params: {page: 3, sort: "updated_at", handler: "PrivateHandler", status: "error"}
 
-    assert_select "th a.sort-link[href=?]", "/admin/?direction=desc&sort=status"
+    assert_select "th a.sort-link[href=?]", "/admin/?direction=asc&handler=PrivateHandler&status=error"
   end
 
   test "says so when there is nothing to list" do

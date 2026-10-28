@@ -7,6 +7,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - Admin URLs no longer include `/received`.
+- Restrict admin sorting to ID, with an ascending/descending toggle, to avoid expensive column sorts.
 
 ## 0.8.1
 

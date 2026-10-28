@@ -96,12 +96,13 @@ class AdminClickThrough < ActiveSupport::TestCase
     assert_equal PAGE_SIZE, @browser.css("tbody tr").length
     assert_equal "the-failed-one", texts("tbody tr td:nth-child(5)").first
 
-    click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Received')]"))
-    assert_includes @browser.current_url, "direction=desc"
+    assert_equal 1, @browser.css("th a").length
+    click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Id')]"))
+    assert_includes @browser.current_url, "direction=asc"
     assert_equal "evt-0", texts("tbody tr td:nth-child(5)").first
 
-    click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Received')]"))
-    assert_includes @browser.current_url, "direction=asc"
+    click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Id')]"))
+    assert_includes @browser.current_url, "direction=desc"
     assert_equal "the-failed-one", texts("tbody tr td:nth-child(5)").first
 
     # Not Ferrum's Node#select: it blanks the select by assigning it `undefined` first, which
@@ -115,7 +116,7 @@ class AdminClickThrough < ActiveSupport::TestCase
     click_and_wait_for_page(@browser.at_css("form.filters input[type=submit]"))
     assert_equal ["the-failed-one"], texts("tbody tr td:nth-child(5)")
     # The sort survives filtering
-    assert_includes @browser.current_url, "direction=asc"
+    assert_includes @browser.current_url, "direction=desc"
 
     click_and_wait_for_page(@browser.at_xpath("//form//a[text()='Clear']"))
     assert_equal "Any status", @browser.evaluate("document.querySelector('select[name=status]').selectedOptions[0].text")
