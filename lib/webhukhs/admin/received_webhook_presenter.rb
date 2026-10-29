@@ -18,13 +18,6 @@ module Webhukhs
       # a few megabytes of pretty-printed JSON just hangs
       DISPLAY_LIMIT = 256 * 1024
 
-      # Compact UUID label for the listing; other IDs are shown unchanged.
-      #
-      # @return [String]
-      def display_id
-        id.to_s.sub(/\A(\h{8})-\h{4}-\h{4}-\h{4}-\h{8}(\h{4})\z/, '\1-..-\2')
-      end
-
       # CSS class coloring the status badge.
       #
       # @return [String]

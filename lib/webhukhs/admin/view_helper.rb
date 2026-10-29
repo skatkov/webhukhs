@@ -4,6 +4,20 @@ module Webhukhs
   module Admin
     # Table-building helpers for the admin views.
     module ViewHelper
+      # Canonical UUID format, independent of UUID version.
+      UUID_RE = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
+
+      # Displays the first 4 and last 4 UUID characters, keeping the full ID on hover.
+      #
+      # @param uuid_str [String] ID to display
+      # @return [String, ActiveSupport::SafeBuffer]
+      def short_id(uuid_str)
+        return uuid_str unless UUID_RE.match?(uuid_str)
+
+        shortened = [uuid_str.first(4), uuid_str.last(4)].join("..")
+        content_tag(:abbr, shortened, title: uuid_str)
+      end
+
       # Renders a table inside a scroll container. Cells are `white-space: nowrap`, so one long
       # column would otherwise take the whole page sideways with it.
       #

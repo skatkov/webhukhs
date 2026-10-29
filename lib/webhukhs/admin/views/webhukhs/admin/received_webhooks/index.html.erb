@@ -30,7 +30,7 @@
 <%# The id cell carries the link, and the CSS stretches it over the whole row %>
 <%= admin_table(columns, @webhooks) do |webhook|
   [
-    link_to(tag.code(webhook.display_id, class: "cell-ellipsis cell-id"), received_webhook_path(webhook), class: "row-link", title: webhook.id, "aria-label": webhook.id),
+    link_to(tag.code(short_id(webhook.id.to_s), class: "cell-ellipsis cell-id"), received_webhook_path(webhook), class: "row-link", title: webhook.id, "aria-label": webhook.id),
     webhook.handler_module_name,
     tag.span(webhook.status, class: ["badge", webhook.status_class]),
     tag.code(webhook.handler_event_id, class: "cell-ellipsis", title: webhook.handler_event_id),

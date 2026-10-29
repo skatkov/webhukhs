@@ -8,7 +8,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 - Admin URLs no longer include `/received`.
 - Restrict admin sorting to ID, with an ascending/descending toggle, to avoid expensive column sorts.
-- Abbreviate UUIDs in the admin listing, keeping the full ID on hover.
+- Abbreviate UUIDs to their first and last 4 characters in the admin listing, keeping the full ID on hover.
 - Group the admin listing's Received and Updated timestamps in the rightmost columns.
 
 ## 0.8.1

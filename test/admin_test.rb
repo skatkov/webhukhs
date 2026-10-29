@@ -58,22 +58,19 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "th a.sort-link[href=?]", "/admin/?direction=desc", text: "Id ▲"
   end
 
-  test "abbreviates UUID ids without changing the underlying id" do
+  test "short_id abbreviates UUIDs in an abbr with the full id as its title" do
     {
-      "01a1895c-806f-7518-a388-c6c6a4496e51" => "01a1895c-..-6e51",
-      "01A1895C-806F-7518-A388-C6C6A4496E51" => "01A1895C-..-6E51",
-      "f47ac10b-58cc-4372-a567-0e02b2c3d479" => "f47ac10b-..-d479"
+      "01a1895c-806f-7518-a388-c6c6a4496e51" => "01a1..6e51",
+      "01A1895C-806F-7518-A388-C6C6A4496E51" => "01A1..6E51",
+      "f47ac10b-58cc-4372-a567-0e02b2c3d479" => "f47a..d479"
     }.each do |id, label|
-      presenter = Webhukhs::Admin::ReceivedWebhookPresenter.new(Struct.new(:id).new(id))
-
-      assert_equal label, presenter.display_id
-      assert_equal id, presenter.id
+      assert_equal %(<abbr title="#{id}">#{label}</abbr>), Webhukhs::Admin::ApplicationController.helpers.short_id(id)
     end
   end
 
-  test "leaves non-UUID ids unchanged" do
+  test "short_id leaves non-UUID strings unchanged" do
     uuid = "01a1895c-806f-7518-a388-c6c6a4496e51"
-    ids = [123, "manual-id", "prefix#{uuid}", "#{uuid}suffix", "#{uuid}\n"]
+    ids = ["123", "manual-id", "prefix#{uuid}", "#{uuid}suffix", "#{uuid}\n"]
     groups = uuid.split("-")
     groups.each_index do |index|
       [groups[index][0...-1], "#{groups[index]}0", "g#{groups[index][1..]}"].each do |invalid_group|
@@ -82,8 +79,7 @@ class AdminTest < ActionDispatch::IntegrationTest
     end
 
     ids.each do |id|
-      presenter = Webhukhs::Admin::ReceivedWebhookPresenter.new(Struct.new(:id).new(id))
-      assert_equal id.to_s, presenter.display_id
+      assert_equal id, Webhukhs::Admin::ApplicationController.helpers.short_id(id)
     end
   end
 
@@ -94,6 +90,7 @@ class AdminTest < ActionDispatch::IntegrationTest
 
     assert_select "a.row-link[href=?][title=?][aria-label=?]", "/admin/#{webhook.id}", webhook.id.to_s, webhook.id.to_s do
       assert_select "code.cell-id", text: webhook.id.to_s
+      assert_select "abbr", count: 0
     end
   end
 
