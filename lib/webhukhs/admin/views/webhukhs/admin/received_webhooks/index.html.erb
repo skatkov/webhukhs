@@ -19,10 +19,10 @@
 <%
   columns = [
     sort_link(direction: @direction),
-    "Received",
     "Handler",
     "Status",
     "Event id",
+    "Received",
     "Updated"
   ]
 %>
@@ -31,10 +31,10 @@
 <%= admin_table(columns, @webhooks) do |webhook|
   [
     link_to(tag.code(webhook.display_id, class: "cell-ellipsis cell-id"), received_webhook_path(webhook), class: "row-link", title: webhook.id, "aria-label": webhook.id),
-    time_tag(webhook.created_at, webhook.created_at.iso8601),
     webhook.handler_module_name,
     tag.span(webhook.status, class: ["badge", webhook.status_class]),
     tag.code(webhook.handler_event_id, class: "cell-ellipsis", title: webhook.handler_event_id),
+    time_tag(webhook.created_at, webhook.created_at.iso8601),
     time_tag(webhook.updated_at, webhook.updated_at.iso8601)
   ]
 end %>

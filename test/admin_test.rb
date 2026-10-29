@@ -20,7 +20,7 @@ class AdminTest < ActionDispatch::IntegrationTest
   end
 
   def listed_event_ids
-    css_select("table.admin-table tbody tr td:nth-child(5) code").map(&:text)
+    css_select("table.admin-table tbody tr td:nth-child(4) code").map(&:text)
   end
 
   test "lists webhooks by descending id regardless of received time by default" do
@@ -36,7 +36,16 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "th a.sort-link[href=?]", "/admin/?direction=asc", text: "Id ▼"
     assert_select "th a", count: 1
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
-    assert_equal ["Id ▼", "Received", "Handler", "Status", "Event id", "Updated"], css_select("th").map(&:text)
+    assert_equal ["Id ▼", "Handler", "Status", "Event id", "Received", "Updated"], css_select("th").map(&:text)
+  end
+
+  test "groups receipt and update timestamps in the rightmost columns" do
+    webhook = create_webhook(created_at: 2.days.ago, updated_at: 1.day.ago)
+
+    get "/admin"
+
+    assert_select "tbody tr td:nth-child(5) time[datetime=?]", webhook.created_at.iso8601
+    assert_select "tbody tr td:nth-child(6) time[datetime=?]", webhook.updated_at.iso8601
   end
 
   test "sorts by id in ascending order when requested" do

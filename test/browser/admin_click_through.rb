@@ -94,16 +94,16 @@ class AdminClickThrough < ActiveSupport::TestCase
     # The stylesheet must have made it through the CSP - unstyled, the header would not be a flexbox
     assert_equal "flex", @browser.evaluate("getComputedStyle(document.querySelector('.admin-header')).display")
     assert_equal PAGE_SIZE, @browser.css("tbody tr").length
-    assert_equal "the-failed-one", texts("tbody tr td:nth-child(5)").first
+    assert_equal "the-failed-one", texts("tbody tr td:nth-child(4)").first
 
     assert_equal 1, @browser.css("th a").length
     click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Id')]"))
     assert_includes @browser.current_url, "direction=asc"
-    assert_equal "evt-0", texts("tbody tr td:nth-child(5)").first
+    assert_equal "evt-0", texts("tbody tr td:nth-child(4)").first
 
     click_and_wait_for_page(@browser.at_xpath("//th/a[contains(., 'Id')]"))
     assert_includes @browser.current_url, "direction=desc"
-    assert_equal "the-failed-one", texts("tbody tr td:nth-child(5)").first
+    assert_equal "the-failed-one", texts("tbody tr td:nth-child(4)").first
 
     # Not Ferrum's Node#select: it blanks the select by assigning it `undefined` first, which
     # left it blank on the Chromium snapshot CI got
@@ -114,7 +114,7 @@ class AdminClickThrough < ActiveSupport::TestCase
     JS
     assert_equal "error", @browser.evaluate("document.querySelector('select[name=status]').value")
     click_and_wait_for_page(@browser.at_css("form.filters input[type=submit]"))
-    assert_equal ["the-failed-one"], texts("tbody tr td:nth-child(5)")
+    assert_equal ["the-failed-one"], texts("tbody tr td:nth-child(4)")
     # The sort survives filtering
     assert_includes @browser.current_url, "direction=desc"
 
@@ -132,7 +132,7 @@ class AdminClickThrough < ActiveSupport::TestCase
 
     visit ""
     # The status cell is not a link, but the row link stretched over it takes the click
-    click_and_wait_for_page(@browser.at_css("tbody tr td:nth-child(4)"))
+    click_and_wait_for_page(@browser.at_css("tbody tr td:nth-child(3)"))
 
     assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
     assert_includes @browser.at_css("h1").text, "WebhookTestHandler"
@@ -199,14 +199,14 @@ class AdminClickThrough < ActiveSupport::TestCase
 
     create_webhook(handler_event_id: "evt-arrived")
     # One poll interval, with some slack
-    wait_for("the new webhook to show up", timeout: 8) { texts("tbody tr td:nth-child(5)").include?("evt-arrived") }
-    assert_equal ["evt-arrived", "evt-before"], texts("tbody tr td:nth-child(5)")
+    wait_for("the new webhook to show up", timeout: 8) { texts("tbody tr td:nth-child(4)").include?("evt-arrived") }
+    assert_equal ["evt-arrived", "evt-before"], texts("tbody tr td:nth-child(4)")
 
     visit ""
     assert switch.call, "The switch should stay on after a reload"
     # After a page load only the timer refetches, so this one has to come in through a poll
     create_webhook(handler_event_id: "evt-polled")
-    wait_for("the polled webhook to show up", timeout: 8) { texts("tbody tr td:nth-child(5)").include?("evt-polled") }
+    wait_for("the polled webhook to show up", timeout: 8) { texts("tbody tr td:nth-child(4)").include?("evt-polled") }
     @browser.at_css("label.switch").click
     wait_for("the switch to turn off") { !switch.call }
   end
