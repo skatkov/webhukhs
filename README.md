@@ -76,7 +76,11 @@ Now you will be able to accept webhooks on `/webhooks/example` path.
 
 Webhukhs comes with a read-only admin for looking at the webhooks you have received: a sortable,
 filterable list, and a page per webhook with its body (pretty-printed when it is JSON) and the
-request headers it arrived with. It is not loaded by default - require it in your Gemfile (it has to be
+request headers it arrived with.
+
+![Webhukhs admin listing with compact UUIDs, status filters, and received and updated timestamps](.github/screenshots/admin-id-sorting.png)
+
+It is not loaded by default - require it in your Gemfile (it has to be
 loaded before the app boots, so `config/routes.rb` is too late):
 
 ```ruby
