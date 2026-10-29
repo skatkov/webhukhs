@@ -129,6 +129,9 @@ migration is needed. Click **ID** to switch between ascending and descending ord
 are not sortable, avoiding expensive sorts on large webhook tables. Handler and status filters are
 still available.
 
+UUIDs are abbreviated in the list, for example `01a1895c-..-6e51`; hover over the ID to see the full
+value. Detail pages and copied IDs retain the full UUID.
+
 **We strongly recommend against UUIDv4 primary keys.** Use UUIDv7 or auto-incrementing integer IDs
 instead. UUIDv4 IDs are random, so sorting by ID does not reflect creation time, and inserts have
 poorer index locality. Webhukhs generates UUIDv7 when Ruby supports it, but falls back to UUIDv4

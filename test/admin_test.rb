@@ -49,6 +49,45 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "th a.sort-link[href=?]", "/admin/?direction=desc", text: "Id ▲"
   end
 
+  test "abbreviates UUID ids without changing the underlying id" do
+    {
+      "01a1895c-806f-7518-a388-c6c6a4496e51" => "01a1895c-..-6e51",
+      "01A1895C-806F-7518-A388-C6C6A4496E51" => "01A1895C-..-6E51",
+      "f47ac10b-58cc-4372-a567-0e02b2c3d479" => "f47ac10b-..-d479"
+    }.each do |id, label|
+      presenter = Webhukhs::Admin::ReceivedWebhookPresenter.new(Struct.new(:id).new(id))
+
+      assert_equal label, presenter.display_id
+      assert_equal id, presenter.id
+    end
+  end
+
+  test "leaves non-UUID ids unchanged" do
+    uuid = "01a1895c-806f-7518-a388-c6c6a4496e51"
+    ids = [123, "manual-id", "prefix#{uuid}", "#{uuid}suffix", "#{uuid}\n"]
+    groups = uuid.split("-")
+    groups.each_index do |index|
+      [groups[index][0...-1], "#{groups[index]}0", "g#{groups[index][1..]}"].each do |invalid_group|
+        ids << groups.each_with_index.map { |group, i| (i == index) ? invalid_group : group }.join("-")
+      end
+    end
+
+    ids.each do |id|
+      presenter = Webhukhs::Admin::ReceivedWebhookPresenter.new(Struct.new(:id).new(id))
+      assert_equal id.to_s, presenter.display_id
+    end
+  end
+
+  test "keeps the full id in the row link and hover text" do
+    webhook = create_webhook
+
+    get "/admin"
+
+    assert_select "a.row-link[href=?][title=?][aria-label=?]", "/admin/#{webhook.id}", webhook.id.to_s, webhook.id.to_s do
+      assert_select "code.cell-id", text: webhook.id.to_s
+    end
+  end
+
   test "ignores legacy sort columns in either direction" do
     create_webhook(handler_event_id: "z", status: "skipped", created_at: 1.day.ago, updated_at: 1.hour.ago)
     create_webhook(handler_event_id: "a", handler_module_name: "PrivateHandler", status: "error", created_at: 2.days.ago, updated_at: 2.hours.ago)
