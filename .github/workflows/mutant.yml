@@ -9,6 +9,8 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
+      - name: Record per-test coverage
+        run: SIMPLECOV=1 bundle exec rake test
       - run: |
           git fetch origin main
-          bundle exec mutant run --fail-fast --since origin/main
+          bundle exec mutant run --fail-fast --selection context_map --since origin/main

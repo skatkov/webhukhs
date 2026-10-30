@@ -166,6 +166,21 @@ end
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
+Coverage tooling requires Ruby 3.3 or newer. CI checks 100% line and branch coverage, both overall and per file.
+To generate the same report locally, including which tests exercise each line:
+
+```sh
+SIMPLECOV=1 bundle exec rake test
+bundle exec simplecov open
+bundle exec simplecov tests lib/webhukhs/jobs/processing_job.rb
+```
+
+Run mutation testing with `bundle exec mutant run --fail-fast`. Mutant 0.17+ uses the recorded test map to select
+and rank tests for each subject; without a usable recording, it falls back to the suite's `cover` declarations.
+Regenerate the recording with the full coverage-enabled suite above after changing source or tests.
+SimpleCov is disabled during mutation runs so they do not overwrite the recording. Mutation CI records coverage
+first and requires map-based selection with `--selection context_map`.
+
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 The admin also has a click-through test in a real (headless) Chrome, which `rake test` leaves out.
