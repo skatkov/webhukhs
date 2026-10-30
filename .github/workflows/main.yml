@@ -14,6 +14,7 @@ jobs:
     env:
       BUNDLE_PATH: vendor/bundle
       BUNDLE_DISABLE_SHARED_GEMS: "true"
+      SIMPLECOV: "1"
     strategy:
       matrix:
         ruby:
