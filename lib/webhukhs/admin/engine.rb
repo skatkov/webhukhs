@@ -6,6 +6,8 @@ module Webhukhs
     class Engine < ::Rails::Engine
       isolate_namespace Webhukhs::Admin
 
+      config.eager_load_namespaces << Webhukhs::Admin
+
       # Rooted here rather than at the gem root, so that the views of the admin do not end up
       # on the view path of Webhukhs::Engine - which shares the gem root with us
       config.root = __dir__

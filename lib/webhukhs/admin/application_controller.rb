@@ -6,7 +6,7 @@ module Webhukhs
     # mount the engine inside whatever guards the rest of your admin.
     class ApplicationController < ActionController::Base
       # Rails hands an engine's controllers its route helpers from an `inherited` hook, which only gets
-      # installed when the app initializes - and "webhukhs/admin" may well be required before that
+      # installed when the app initializes - and Webhukhs may well be required before that
       include Webhukhs::Admin::Engine.routes.url_helpers
 
       helper Webhukhs::Admin::Engine.routes.url_helpers

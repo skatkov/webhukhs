@@ -1,17 +1,20 @@
 # frozen_string_literal: true
 
 require "assiette"
-require_relative "../webhukhs"
 require_relative "admin/engine"
-require_relative "admin/view_helper"
-require_relative "admin/received_webhook_presenter"
-require_relative "admin/application_controller"
-require_relative "admin/received_webhooks_controller"
 
 # Public namespace for Webhukhs runtime and configuration.
 module Webhukhs
-  # Optional, read-only admin UI for received webhooks. It is not loaded by `require "webhukhs"` -
-  # require "webhukhs/admin" and mount {Webhukhs::Admin::Engine} yourself, behind your own authentication.
+  # Optional, read-only admin UI for received webhooks. It gets loaded along with Webhukhs, but stays
+  # out of the way until you mount {Webhukhs::Admin::Engine} - behind your own authentication.
   module Admin
+    extend ActiveSupport::Autoload
+
+    eager_autoload do
+      autoload :ViewHelper, "webhukhs/admin/view_helper"
+      autoload :ReceivedWebhookPresenter, "webhukhs/admin/received_webhook_presenter"
+      autoload :ApplicationController, "webhukhs/admin/application_controller"
+      autoload :ReceivedWebhooksController, "webhukhs/admin/received_webhooks_controller"
+    end
   end
 end

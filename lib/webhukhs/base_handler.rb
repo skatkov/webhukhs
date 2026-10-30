@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "jobs/processing_job"
-
 # Namespace for webhook ingestion and processing classes.
 module Webhukhs
   # Base class for webhook handlers.

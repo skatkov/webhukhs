@@ -1,18 +1,14 @@
 # frozen_string_literal: true
 
-require_relative "controllers/receive_webhooks_controller"
-require_relative "jobs/processing_job"
-require_relative "models/received_webhook"
-require_relative "base_handler"
+# ProcessingJob gets autoloaded, but the railtie of ActiveJob has to be there before the app boots
+require "active_job/railtie"
 
 module Webhukhs
   # Rails engine wiring routes, autoloading and generators for Webhukhs.
   class Engine < ::Rails::Engine
     isolate_namespace Webhukhs
 
-    autoload :ReceiveWebhooksController, "webhukhs/controllers/receive_webhooks_controller"
-    autoload :ProcessingJob, "webhukhs/jobs/processing_job"
-    autoload :BaseHandler, "webhukhs/base_handler"
+    config.eager_load_namespaces << Webhukhs
 
     generators do
       require_relative "install_generator"

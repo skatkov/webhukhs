@@ -18,7 +18,7 @@ gem "puma", ">= 6.0"
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 # The admin is optional, and has to be required before the app boots
-gem "webhukhs", path: "../", require: ["webhukhs", "webhukhs/admin"]
+gem "webhukhs", path: "../"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

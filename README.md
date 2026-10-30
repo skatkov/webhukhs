@@ -80,14 +80,7 @@ request headers it arrived with.
 
 ![Webhukhs admin listing with compact UUIDs, status filters, and received and updated timestamps](.github/screenshots/admin-id-sorting.png)
 
-It is not loaded by default - require it in your Gemfile (it has to be
-loaded before the app boots, so `config/routes.rb` is too late):
-
-```ruby
-gem "webhukhs", require: ["webhukhs", "webhukhs/admin"]
-```
-
-and mount it:
+It is not reachable until you mount it:
 
 ```ruby
 # config/routes.rb

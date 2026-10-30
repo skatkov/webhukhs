@@ -46,7 +46,6 @@ Test.establish_database_connection
 Test.define_test_schema
 
 require_relative "../lib/webhukhs"
-require_relative "../lib/webhukhs/admin"
 require_relative "test-webhook-handlers/webhook_test_handler"
 require_relative "test-webhook-handlers/inactive_handler"
 require_relative "test-webhook-handlers/invalid_handler"

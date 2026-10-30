@@ -35,3 +35,10 @@ end
 hooks.register(:mutation_worker_process_start) do |index:|
   isolate_database.call(index: index)
 end
+
+# https://github.com/mbj/mutant/blob/main/docs/rails.md#recommended-hook-eager-load - but the app eager load
+# only covers Zeitwerk, and our autoloads get eager loaded via eager_load_namespaces, like Rails does at boot
+hooks.register(:env_infection_post) do
+  Rails.application.eager_load!
+  Rails.application.config.eager_load_namespaces.each(&:eager_load!)
+end
