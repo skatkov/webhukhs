@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     name: Ruby ${{ matrix.ruby }}, Rails ${{ matrix.rails }}
     env:
       BUNDLE_PATH: vendor/bundle
