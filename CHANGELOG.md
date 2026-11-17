@@ -5,10 +5,16 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+### Changed
+- Listing rows are no longer covered by a stretched link. The row carries its `data-href` and
+  admin.js navigates on a click that did not land on something clickable of its own, so buttons in
+  a row can actually be pressed.
+
 ### Added
 - A **Retry** button in the admin, on the listing and on the webhook page, for webhooks that did not
   get processed - and `Webhukhs::ReceivedWebhook#retry!` / `#retryable?` behind it. The button is
-  disabled for a webhook that has been processed, or that is on its way already.
+  disabled for a webhook that has been processed, or that is on its way already. In the listing it
+  replaces the row it was pressed in, leaving the page where it is.
 - `failed_validation` and `skipped` may now transition back to `received`, the way `error` already
   could, so that a webhook refused by a handler that was misconfigured at the time can be put back
   in line once the configuration is right.

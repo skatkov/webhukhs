@@ -31,8 +31,9 @@ class AdminTest < ActionDispatch::IntegrationTest
 
     assert_response :ok
     assert_equal ["last", "first"], listed_event_ids
-    # The whole row is the link, so it has to be there in the first cell
-    assert_select "tbody tr td:first-child a.row-link[href^='/admin/']", count: 2
+    # The id cell is a link of its own; the rest of the row follows data-href, see admin.js
+    assert_select "tbody tr td:first-child a[href^='/admin/']", count: 2
+    assert_select "tbody tr[data-href^='/admin/']", count: 2
     assert_select "th a.sort-link[href=?]", "/admin/?direction=asc", text: "Id ▼"
     assert_select "th a", count: 1
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
@@ -88,7 +89,8 @@ class AdminTest < ActionDispatch::IntegrationTest
 
     get "/admin"
 
-    assert_select "a.row-link[href=?][title=?][aria-label=?]", "/admin/#{webhook.id}", webhook.id.to_s, webhook.id.to_s do
+    assert_select "tr#webhook-#{webhook.id}[data-href=?]", "/admin/#{webhook.id}"
+    assert_select "a[href=?][title=?][aria-label=?]", "/admin/#{webhook.id}", webhook.id.to_s, webhook.id.to_s do
       assert_select "code.cell-id", text: webhook.id.to_s
       assert_select "abbr", count: 0
     end
@@ -421,6 +423,38 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "p.flash.notice", text: "Webhook queued for processing again."
     assert_select "span.badge.status-waiting", text: "received"
     assert_select "tr th:contains('Event id') + td code", text: webhook.handler_event_id
+  end
+
+  # What admin.js asks for when the button was pressed in the listing: the row, to put in place of
+  # the one that is there, rather than somewhere to go
+  test "answers a retry from the listing with the webhook's row alone" do
+    webhook = create_webhook(status: "error")
+
+    post "/admin/#{webhook.id}/retry", headers: {Webhukhs::Admin::ReceivedWebhooksController::ROW_REQUEST_HEADER => "1"}
+
+    assert_response :ok
+    assert_predicate webhook.reload, :received?
+    assert_select "tr#webhook-#{webhook.id}[data-href=?]", "/admin/#{webhook.id}" do
+      assert_select "span.badge.status-waiting", text: "received"
+      # Nothing left to retry now that it is on its way
+      assert_select "button.btn-retry[disabled]", text: "Retry"
+    end
+    refute_includes response.body, "<html", "The row goes back on its own, without a page around it"
+  end
+
+  test "answers with the row even when the webhook turned out not to be retryable" do
+    webhook = create_webhook(status: "processed")
+
+    post "/admin/#{webhook.id}/retry", headers: {Webhukhs::Admin::ReceivedWebhooksController::ROW_REQUEST_HEADER => "1"}
+
+    assert_response :ok
+    assert_predicate webhook.reload, :processed?
+    assert_empty enqueued_jobs
+    # The row says what the status actually is, which is the answer to a page that went stale
+    assert_select "tr#webhook-#{webhook.id}" do
+      assert_select "span.badge.status-ok", text: "processed"
+      assert_select "button.btn-retry[disabled]", text: "Retry"
+    end
   end
 
   # The button is disabled for these, so this is someone whose page went stale - or a POST by hand

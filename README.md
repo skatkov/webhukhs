@@ -132,6 +132,11 @@ A webhook that did not get processed can be put back in line, from its own page 
 
 ![The admin listing with a Retry button in every row, disabled for the webhooks that have been processed](.github/screenshots/admin-retry-listing.png)
 
+Pressed in the listing, the button replaces that one row with what it became - the status, the
+timestamp and the button itself come back changed and the page stays where it is. On the webhook's
+own page it reloads the page. Without JavaScript the same form submits normally and lands on the
+webhook, so nothing here depends on the browser being able to run anything.
+
 Retrying takes the webhook back to `received` and enqueues it exactly as a fresh delivery would be,
 so it goes through the same handler validation and processing as the first attempt. That makes the
 button worth having mostly for the delivery your side refused: a signature secret that had not been

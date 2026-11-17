@@ -37,20 +37,46 @@ module Webhukhs
         @webhook = ReceivedWebhookPresenter.new(ReceivedWebhook.find(params.fetch(:id)))
       end
 
-      # Puts one webhook back in line for processing and returns to its page.
+      # Set by admin.js on the retry it sends from the listing, where the answer wanted is the row
+      # rather than a page to go to
+      ROW_REQUEST_HEADER = "X-Webhukhs-Row"
+
+      # Puts one webhook back in line for processing.
+      #
+      # Answers with the webhook's row for a retry pressed in the listing, so the listing can put it
+      # in place of the one that was there - and with a redirect to the webhook otherwise, which is
+      # what a plain form submit (no JavaScript, or the button on the webhook's own page) wants.
       #
       # @return [void]
       def retry
         webhook = ReceivedWebhook.find(params.fetch(:id))
         webhook.retry!
+        return render_row(webhook) if row_requested?
+
         redirect_to webhook, notice: "Webhook queued for processing again."
       rescue StateMachineEnum::InvalidTransition
         # The button is disabled for a webhook that cannot be retried, so getting here means the
-        # status changed under whoever pressed it - or that the request did not come from the page
+        # status changed under whoever pressed it - or that the request did not come from the page.
+        # The row that goes back says what the status actually is, which is the answer either way.
+        return render_row(webhook) if row_requested?
+
         redirect_to webhook, alert: "This webhook is #{webhook.status} and cannot be retried."
       end
 
       private
+
+      # @return [Boolean]
+      def row_requested?
+        request.headers.key?(ROW_REQUEST_HEADER)
+      end
+
+      # The webhook as one row of the listing, and nothing else - no layout, no page around it.
+      #
+      # @param webhook [Webhukhs::ReceivedWebhook]
+      # @return [void]
+      def render_row(webhook)
+        render partial: "received_webhook", locals: {webhook: ReceivedWebhookPresenter.new(webhook)}
+      end
 
       # The configured handlers rather than a DISTINCT over the table, so that a handler which has
       # not received anything yet can still be picked - "nothing arrived" is an answer too.

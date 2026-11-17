@@ -5,10 +5,7 @@
 
 <div class="page-heading detail-heading">
   <h1><%= @webhook.handler_module_name %> <span class="badge <%= @webhook.status_class %>"><%= @webhook.status %></span></h1>
-  <%# Disabled rather than hidden, so the button does not move about between statuses - the title says why.
-      The block form of button_to, so that this is a <button> whatever the host app has
-      `button_to_generates_button_tag` set to %>
-  <%= button_to retry_received_webhook_path(@webhook), class: "btn-retry", disabled: !@webhook.retryable?, title: @webhook.retry_title do %>Retry<% end %>
+  <%= retry_button(@webhook) %>
 </div>
 
 <h2>Attributes</h2>
@@ -56,6 +53,6 @@
   <code>action_dispatch.request.path_parameters</code> is not a header, but the parameters
   the router matched for the request.
 </p>
-<%= admin_table(["Header", "Value"], @webhook.header_rows) do |name, value|
-  [tag.code(name), tag.code(value, class: "header-value")]
-end %>
+<%= admin_table(["Header", "Value"], @webhook.header_rows.map { |name, value|
+  admin_row([tag.code(name), tag.code(value, class: "header-value")])
+}) %>

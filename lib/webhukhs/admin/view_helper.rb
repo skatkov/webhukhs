@@ -18,22 +18,50 @@ module Webhukhs
         content_tag(:abbr, shortened, title: uuid_str)
       end
 
+      # One table row, each cell wrapped in a `td`.
+      #
+      # Separate from #admin_table, which takes rows rather than building them, so that a row can
+      # also be rendered on its own - the retry of a webhook answers with its row alone, for the
+      # listing to put in place of the one that was there.
+      #
+      # @param cells [Array] cell contents
+      # @return [ActiveSupport::SafeBuffer]
+      def admin_row(cells)
+        tag.tr { safe_join(cells.map { |cell| tag.td(cell) }) }
+      end
+
       # Renders a table inside a scroll container. Cells are `white-space: nowrap`, so one long
       # column would otherwise take the whole page sideways with it.
       #
       # @param columns [Array<String>] header cell contents
-      # @param records [Array] rows to render
-      # @yieldparam record [Object] one of the records
-      # @yieldreturn [Array] cell contents for that record
+      # @param rows [Array<ActiveSupport::SafeBuffer>] rows, as built by #admin_row
       # @return [ActiveSupport::SafeBuffer]
-      def admin_table(columns, records)
-        rows = records.map do |record|
-          tag.tr { safe_join(yield(record).map { |cell| tag.td(cell) }) }
-        end
+      def admin_table(columns, rows)
         rows = [tag.tr(tag.td("No records.", colspan: columns.length, class: "empty"))] if rows.empty?
 
         thead = tag.thead(tag.tr(safe_join(columns.map { |column| tag.th(column) })))
         tag.div(tag.table(safe_join([thead, tag.tbody(safe_join(rows))]), class: "admin-table"), class: "table-scroll")
+      end
+
+      # The id of the row a webhook is listed in, so that the listing can find it again when the
+      # webhook is retried and its row comes back changed.
+      #
+      # @param webhook [Webhukhs::Admin::ReceivedWebhookPresenter]
+      # @return [String]
+      def received_webhook_row_id(webhook)
+        "webhook-#{webhook.id}"
+      end
+
+      # The retry button, as a form of its own - disabled rather than hidden for a webhook that
+      # cannot be retried, so that it does not move about between statuses.
+      #
+      # The block form of `button_to`, so that this is a `button` whatever the host application has
+      # `button_to_generates_button_tag` set to.
+      #
+      # @param webhook [Webhukhs::Admin::ReceivedWebhookPresenter]
+      # @return [ActiveSupport::SafeBuffer]
+      def retry_button(webhook)
+        button_to(retry_received_webhook_path(webhook), class: "btn-retry", disabled: !webhook.retryable?, title: webhook.retry_title) { "Retry" }
       end
 
       # ID column header linking to the index with the sort direction reversed.

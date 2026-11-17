@@ -121,8 +121,8 @@ module Webhukhs
     # job, the same way it does for a webhook that just came in off the wire, so a retry goes
     # through the same validation and processing as the first attempt did.
     #
-    # @raise [StateMachineEnum::InvalidTransition] if the webhook is not #retryable?
     # @return [void]
+    # @raise [StateMachineEnum::InvalidTransition] if the webhook is not #retryable?
     def retry!
       ensure_status_may_transition_to!(:received)
       received!

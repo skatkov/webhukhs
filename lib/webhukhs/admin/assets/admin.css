@@ -288,24 +288,19 @@ p.muted {
 .admin-table tbody tr:nth-child(even) {
   background: var(--color-bg-subtle);
 }
-/* Rows with a .row-link are clickable as a whole: the link's ::after covers the row */
-.admin-table tbody tr:has(> td > .row-link) {
-  position: relative;
+/* A row with a data-href is clickable as a whole - admin.js navigates, so nothing is laid over
+   the row and the buttons in it stay reachable */
+.admin-table tbody tr[data-href] {
   cursor: pointer;
 }
-.admin-table tbody tr:has(> td > .row-link):hover {
+.admin-table tbody tr[data-href]:hover {
   background: var(--color-bg-hover);
 }
-.admin-table tbody tr:has(> td > .row-link:focus-visible) {
+.admin-table tbody tr[data-href]:has(a:focus-visible) {
   outline: 2px solid var(--color-link);
   outline-offset: -2px;
 }
-.row-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-.row-link:focus-visible {
+.admin-table tbody tr[data-href] a:focus-visible {
   outline: none;
 }
 
@@ -461,11 +456,7 @@ h1 .badge {
 .detail-heading {
   margin-bottom: 16px;
 }
-/* The row link covers the whole row with its ::after, so the cell holding a button has to come
-   out above it - without this the row swallows the click and opens the webhook instead */
 .admin-table td:has(> form.button_to) {
-  position: relative;
-  z-index: 1;
   width: 1%;
 }
 

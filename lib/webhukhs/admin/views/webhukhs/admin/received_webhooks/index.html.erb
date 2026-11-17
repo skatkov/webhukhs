@@ -28,18 +28,7 @@
   ]
 %>
 <div id="received-webhooks">
-<%# The id cell carries the link, and the CSS stretches it over the whole row %>
-<%= admin_table(columns, @webhooks) do |webhook|
-  [
-    link_to(tag.code(short_id(webhook.id.to_s), class: "cell-ellipsis cell-id"), received_webhook_path(webhook), class: "row-link", title: webhook.id, "aria-label": webhook.id),
-    webhook.handler_module_name,
-    tag.span(webhook.status, class: ["badge", webhook.status_class]),
-    tag.code(webhook.handler_event_id, class: "cell-ellipsis", title: webhook.handler_event_id),
-    time_tag(webhook.created_at, webhook.created_at.iso8601),
-    time_tag(webhook.updated_at, webhook.updated_at.iso8601),
-    button_to(retry_received_webhook_path(webhook), class: "btn-retry", disabled: !webhook.retryable?, title: webhook.retry_title) { "Retry" }
-  ]
-end %>
+<%= admin_table(columns, @webhooks.map { |webhook| render("received_webhook", webhook: webhook) }) %>
 
 <nav class="pagination">
   <% if @page > 1 %>

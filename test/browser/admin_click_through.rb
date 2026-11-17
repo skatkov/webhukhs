@@ -219,16 +219,36 @@ class AdminClickThrough < ActiveSupport::TestCase
     assert @browser.at_css("button.btn-retry").attribute("disabled")
   end
 
-  # The row link covers the whole row, so without the stacking the click would open the webhook
-  test "retries a webhook from the listing without opening it" do
+  # The row is replaced where it stands, rather than the listing being left for the webhook's page
+  test "retries a webhook from the listing, replacing its row" do
     webhook = create_webhook(handler_event_id: "evt-to-retry", status: "failed_validation")
+    other = create_webhook(handler_event_id: "evt-untouched", status: "error")
 
     visit ""
-    click_and_wait_for_page(@browser.at_css("tbody tr button.btn-retry"))
+    listing_url = @browser.current_url
+    row = "tr#webhook-#{webhook.id}"
+    assert_equal "failed_validation", @browser.at_css("#{row} .badge").text
 
-    assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
-    assert_equal "Webhook queued for processing again.", @browser.at_css("p.flash.notice").text
+    @browser.at_css("#{row} button.btn-retry").click
+    wait_for("the row to come back as received") { @browser.evaluate("document.querySelector(#{"#{row} .badge".to_json}).textContent") == "received" }
+
+    assert_equal listing_url, @browser.current_url, "The listing should have stayed where it was"
     assert_equal "received", webhook.reload.status
+    assert @browser.at_css("#{row} button.btn-retry").attribute("disabled")
+
+    # And only that row changed
+    assert_equal "error", @browser.at_css("tr#webhook-#{other.id} .badge").text
+    assert_equal "error", other.reload.status
+  end
+
+  # The retry button sits in the row, which is clickable as a whole - pressing the button must not
+  # also open the webhook
+  test "opens the webhook from a click anywhere else in the row, but not from the retry button" do
+    webhook = create_webhook(handler_event_id: "evt-row-click", status: "error")
+
+    visit ""
+    click_and_wait_for_page(@browser.at_css("tbody tr td:nth-child(2)"))
+    assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
   end
 
   test "picks up new webhooks while auto-refresh is on, and remembers the switch" do
