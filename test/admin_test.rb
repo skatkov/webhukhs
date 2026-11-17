@@ -36,7 +36,7 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "th a.sort-link[href=?]", "/admin/?direction=asc", text: "Id ▼"
     assert_select "th a", count: 1
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
-    assert_equal ["Id ▼", "Handler", "Status", "Event id", "Received", "Updated"], css_select("th").map(&:text)
+    assert_equal ["Id ▼", "Handler", "Status", "Event id", "Received", "Updated", "Retry"], css_select("th").map(&:text)
   end
 
   test "groups receipt and update timestamps in the rightmost columns" do
@@ -239,8 +239,8 @@ class AdminTest < ActionDispatch::IntegrationTest
   test "says so when there is nothing to list" do
     get "/admin"
 
-    assert_select "div.table-scroll > table.admin-table > thead > tr > th", count: 6
-    assert_select "table.admin-table > tbody > tr > td.empty[colspan='6']", text: "No records."
+    assert_select "div.table-scroll > table.admin-table > thead > tr > th", count: 7
+    assert_select "table.admin-table > tbody > tr > td.empty[colspan='7']", text: "No records."
   end
 
   test "colors the status badges" do
@@ -358,6 +358,83 @@ class AdminTest < ActionDispatch::IntegrationTest
 
     assert_select "button.btn-copy[type=button][title='Copy to clipboard'][data-copy=?]", webhook.id.to_s
     assert_select "button.btn-copy[data-copy=?]", "evt_123"
+  end
+
+  test "offers a retry button on the detail page, enabled only when the webhook can be retried" do
+    {
+      "error" => "Put this webhook back in line for processing",
+      "failed_validation" => "Put this webhook back in line for processing",
+      "skipped" => "Put this webhook back in line for processing"
+    }.each do |status, title|
+      webhook = create_webhook(status: status)
+
+      get "/admin/#{webhook.id}"
+
+      assert_select "form.button_to[action=?][method=post]", "/admin/#{webhook.id}/retry" do
+        assert_select "button.btn-retry[title=?]", title, text: "Retry"
+        assert_select "button[disabled]", count: 0
+      end
+    end
+  end
+
+  test "disables the retry button for a webhook that is processed or on its way" do
+    {
+      "processed" => "This webhook has been processed",
+      "received" => "This webhook is already on its way",
+      "processing" => "This webhook is already on its way"
+    }.each do |status, title|
+      webhook = create_webhook(status: status)
+
+      get "/admin/#{webhook.id}"
+
+      assert_select "button.btn-retry[disabled][title=?]", title, text: "Retry"
+    end
+  end
+
+  test "offers a retry button in every row of the listing" do
+    retryable = create_webhook(status: "error")
+    done = create_webhook(status: "processed")
+
+    get "/admin"
+
+    assert_select "tbody tr td:nth-child(7) form.button_to[action=?]", "/admin/#{retryable.id}/retry" do
+      assert_select "button.btn-retry:not([disabled])", text: "Retry"
+    end
+    assert_select "tbody tr td:nth-child(7) form.button_to[action=?]", "/admin/#{done.id}/retry" do
+      assert_select "button.btn-retry[disabled]", text: "Retry"
+    end
+  end
+
+  test "retries a webhook, enqueues it again and says so" do
+    # A decoy first, so that the retried one is not whatever the table happens to hand back first
+    create_webhook(status: "error", handler_event_id: "not-this-one")
+    webhook = create_webhook(status: "failed_validation")
+
+    assert_enqueued_with job: Webhukhs::ProcessingJob, args: [webhook] do
+      post "/admin/#{webhook.id}/retry"
+    end
+
+    assert_redirected_to "/admin/#{webhook.id}"
+    assert_predicate webhook.reload, :received?
+
+    follow_redirect!
+    assert_select "p.flash.notice", text: "Webhook queued for processing again."
+    assert_select "span.badge.status-waiting", text: "received"
+    assert_select "tr th:contains('Event id') + td code", text: webhook.handler_event_id
+  end
+
+  # The button is disabled for these, so this is someone whose page went stale - or a POST by hand
+  test "refuses to retry a webhook that is not retryable, and says why" do
+    webhook = create_webhook(status: "processed")
+
+    post "/admin/#{webhook.id}/retry"
+
+    assert_redirected_to "/admin/#{webhook.id}"
+    assert_predicate webhook.reload, :processed?
+    assert_empty enqueued_jobs
+
+    follow_redirect!
+    assert_select "p.flash.alert", text: "This webhook is processed and cannot be retried."
   end
 
   test "locks the pages down with a content security policy" do

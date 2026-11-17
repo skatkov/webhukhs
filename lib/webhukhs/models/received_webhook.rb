@@ -18,7 +18,11 @@ module Webhukhs
       s.permit_transition(:processing, :skipped)
       s.permit_transition(:processing, :processed)
       s.permit_transition(:processing, :error)
+      # Back in line for another go. The three states a webhook can come to rest in without having
+      # been processed - see #retry!
       s.permit_transition(:error, :received)
+      s.permit_transition(:failed_validation, :received)
+      s.permit_transition(:skipped, :received)
 
       s.after_committed_transition_to(:received) do |webhook|
         webhook.handler.enqueue(webhook)
@@ -98,6 +102,30 @@ module Webhukhs
     # @return [ActionDispatch::Request]
     def request
       ActionDispatch::Request.new(request_headers.merge("rack.input" => StringIO.new(body.b)))
+    end
+
+    # Whether this webhook can be put back in line for processing.
+    #
+    # This is the state machine's own answer rather than a list of statuses kept somewhere else:
+    # `processed` is done, `received` and `processing` are already on their way, and the three
+    # resting states that did not get there permit the transition back.
+    #
+    # @return [Boolean]
+    def retryable?
+      status_may_transition_to?(:received)
+    end
+
+    # Puts the webhook back in line for processing, as if it had just arrived.
+    #
+    # Only the transition is performed here - the `received` hook on the state machine enqueues the
+    # job, the same way it does for a webhook that just came in off the wire, so a retry goes
+    # through the same validation and processing as the first attempt did.
+    #
+    # @raise [StateMachineEnum::InvalidTransition] if the webhook is not #retryable?
+    # @return [void]
+    def retry!
+      ensure_status_may_transition_to!(:received)
+      received!
     end
 
     # Instantiates the configured handler for this webhook.

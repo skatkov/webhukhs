@@ -4,7 +4,8 @@
 module Webhukhs
   # Read-only administration for received webhooks.
   module Admin
-    # Lists and shows stored webhooks. Read-only: the lifecycle belongs to Webhukhs::ProcessingJob.
+    # Lists and shows stored webhooks, and puts the ones that did not get processed back in line.
+    # Beyond that retry the lifecycle belongs to Webhukhs::ProcessingJob.
     class ReceivedWebhooksController < ApplicationController
       # Webhooks per index page
       PAGE_SIZE = 50
@@ -34,6 +35,19 @@ module Webhukhs
       # @return [void]
       def show
         @webhook = ReceivedWebhookPresenter.new(ReceivedWebhook.find(params.fetch(:id)))
+      end
+
+      # Puts one webhook back in line for processing and returns to its page.
+      #
+      # @return [void]
+      def retry
+        webhook = ReceivedWebhook.find(params.fetch(:id))
+        webhook.retry!
+        redirect_to webhook, notice: "Webhook queued for processing again."
+      rescue StateMachineEnum::InvalidTransition
+        # The button is disabled for a webhook that cannot be retried, so getting here means the
+        # status changed under whoever pressed it - or that the request did not come from the page
+        redirect_to webhook, alert: "This webhook is #{webhook.status} and cannot be retried."
       end
 
       private

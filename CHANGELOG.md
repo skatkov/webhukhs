@@ -5,6 +5,14 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## Unreleased
 
+### Added
+- A **Retry** button in the admin, on the listing and on the webhook page, for webhooks that did not
+  get processed - and `Webhukhs::ReceivedWebhook#retry!` / `#retryable?` behind it. The button is
+  disabled for a webhook that has been processed, or that is on its way already.
+- `failed_validation` and `skipped` may now transition back to `received`, the way `error` already
+  could, so that a webhook refused by a handler that was misconfigured at the time can be put back
+  in line once the configuration is right.
+
 ## 0.8.2
 
 ### Changed

@@ -25,6 +25,16 @@ module Webhukhs
         STATUS_CLASSES.fetch(status, "status-neutral")
       end
 
+      # Tooltip for the retry button, saying what pressing it does - or why it is disabled.
+      #
+      # @return [String]
+      def retry_title
+        return "Put this webhook back in line for processing" if retryable?
+        return "This webhook has been processed" if processed?
+
+        "This webhook is already on its way"
+      end
+
       # Whether the body is too large to display in full.
       #
       # @return [Boolean]

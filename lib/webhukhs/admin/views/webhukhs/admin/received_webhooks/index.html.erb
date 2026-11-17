@@ -23,7 +23,8 @@
     "Status",
     "Event id",
     "Received",
-    "Updated"
+    "Updated",
+    "Retry"
   ]
 %>
 <div id="received-webhooks">
@@ -35,7 +36,8 @@
     tag.span(webhook.status, class: ["badge", webhook.status_class]),
     tag.code(webhook.handler_event_id, class: "cell-ellipsis", title: webhook.handler_event_id),
     time_tag(webhook.created_at, webhook.created_at.iso8601),
-    time_tag(webhook.updated_at, webhook.updated_at.iso8601)
+    time_tag(webhook.updated_at, webhook.updated_at.iso8601),
+    button_to(retry_received_webhook_path(webhook), class: "btn-retry", disabled: !webhook.retryable?, title: webhook.retry_title) { "Retry" }
   ]
 end %>
 

@@ -80,6 +80,20 @@ class AdminClickThrough < ActiveSupport::TestCase
     @browser.network.wait_for_idle
   end
 
+  # For a click that lands back on the URL it started from - a redirect to the same page - where
+  # waiting for the URL to change would wait forever. Polls through evaluate rather than holding on
+  # to a node, since the document is being replaced underneath.
+  def click_and_wait_for_text(node, selector)
+    label = node.text.strip
+    node.scroll_into_view
+    node.click
+    text = wait_for("#{selector} after clicking #{label.inspect}") do
+      @browser.evaluate("document.querySelector(#{selector.to_json})?.textContent?.trim() ?? null")
+    end
+    @browser.network.wait_for_idle
+    text
+  end
+
   # In one evaluate, so that auto-refresh swapping the table cannot pull the nodes out from under us
   def texts(selector)
     @browser.evaluate("Array.from(document.querySelectorAll(#{selector.to_json}), (node) => node.textContent.trim())")
@@ -186,6 +200,35 @@ class AdminClickThrough < ActiveSupport::TestCase
 
     visit "/#{large.id}"
     assert_equal "The body was 256 KB, display is truncated", @browser.at_css(".flash.alert").text
+  end
+
+  test "retries a webhook from its page" do
+    webhook = create_webhook(handler_event_id: "evt-to-retry", status: "error")
+
+    visit "/#{webhook.id}"
+    assert_equal "error", @browser.at_css("h1 .badge").text
+
+    # The retry redirects back to the page it was pressed on, so there is no URL change to wait for
+    flash = click_and_wait_for_text(@browser.at_css("form.button_to button.btn-retry"), "p.flash.notice")
+
+    assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
+    assert_equal "Webhook queued for processing again.", flash
+    assert_equal "received", @browser.at_css("h1 .badge").text
+    assert_equal "received", webhook.reload.status
+    # And now there is nothing left to retry
+    assert @browser.at_css("button.btn-retry").attribute("disabled")
+  end
+
+  # The row link covers the whole row, so without the stacking the click would open the webhook
+  test "retries a webhook from the listing without opening it" do
+    webhook = create_webhook(handler_event_id: "evt-to-retry", status: "failed_validation")
+
+    visit ""
+    click_and_wait_for_page(@browser.at_css("tbody tr button.btn-retry"))
+
+    assert_equal "#{@base_url}/#{webhook.id}", @browser.current_url
+    assert_equal "Webhook queued for processing again.", @browser.at_css("p.flash.notice").text
+    assert_equal "received", webhook.reload.status
   end
 
   test "picks up new webhooks while auto-refresh is on, and remembers the switch" do
