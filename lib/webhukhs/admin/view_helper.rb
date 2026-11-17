@@ -33,10 +33,18 @@ module Webhukhs
       # Renders a table inside a scroll container. Cells are `white-space: nowrap`, so one long
       # column would otherwise take the whole page sideways with it.
       #
+      # Rows can come either way: with a block, each record is turned into a row of the cells the
+      # block returns, and without one the records are the rows themselves - already rendered, by
+      # #admin_row or by a partial. The listing needs the second, since its rows carry attributes
+      # of their own and one of them is also rendered on its own when a webhook is retried.
+      #
       # @param columns [Array<String>] header cell contents
-      # @param rows [Array<ActiveSupport::SafeBuffer>] rows, as built by #admin_row
+      # @param records [Array] rows to render, or records to build rows from
+      # @yieldparam record [Object] one of the records
+      # @yieldreturn [Array] cell contents for that record
       # @return [ActiveSupport::SafeBuffer]
-      def admin_table(columns, rows)
+      def admin_table(columns, records)
+        rows = block_given? ? records.map { |record| admin_row(yield(record)) } : records
         rows = [tag.tr(tag.td("No records.", colspan: columns.length, class: "empty"))] if rows.empty?
 
         thead = tag.thead(tag.tr(safe_join(columns.map { |column| tag.th(column) })))

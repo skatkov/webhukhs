@@ -6,6 +6,7 @@ This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## Unreleased
 
 ### Changed
+- `admin_table` also takes rows that are already rendered, as well as records and a block of cells.
 - Listing rows are no longer covered by a stretched link. The row carries its `data-href` and
   admin.js navigates on a click that did not land on something clickable of its own, so buttons in
   a row can actually be pressed.

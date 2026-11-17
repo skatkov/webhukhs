@@ -53,6 +53,6 @@
   <code>action_dispatch.request.path_parameters</code> is not a header, but the parameters
   the router matched for the request.
 </p>
-<%= admin_table(["Header", "Value"], @webhook.header_rows.map { |name, value|
-  admin_row([tag.code(name), tag.code(value, class: "header-value")])
-}) %>
+<%= admin_table(["Header", "Value"], @webhook.header_rows) do |name, value|
+  [tag.code(name), tag.code(value, class: "header-value")]
+end %>
