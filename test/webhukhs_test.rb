@@ -260,6 +260,17 @@ class TestWebhukhs < ActionDispatch::IntegrationTest
     assert_equal "123", received_webhook.request.params["user_id"]
   end
 
+  test "accepts a webhook on a route that names the service_id in its defaults instead of its path" do
+    post "/legacy-hook-url", params: {isValid: true}.to_json, headers: {"CONTENT_TYPE" => "application/json"}
+
+    assert_response 200
+    assert_equal({"ok" => true, "error" => nil}, JSON.parse(response.body))
+
+    received_webhook = Webhukhs::ReceivedWebhook.sole
+    assert_predicate received_webhook, :received?
+    assert_equal "WebhookTestHandler", received_webhook.handler_module_name
+  end
+
   test "erroneous webhook could be processed again" do
     webhook = Webhukhs::ReceivedWebhook.create(
       handler_event_id: "test",
