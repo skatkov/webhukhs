@@ -346,6 +346,17 @@ p.muted {
   word-break: break-all;
 }
 
+/* Holds a column open at the width of its widest value - laid out, but with no height and nothing
+   to see. See #column_header_sized_for */
+.admin-table th .column-sizer {
+  display: block;
+  height: 0;
+  padding-block: 0;
+  border-block: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
 /* Status badges */
 .badge {
   display: inline-block;

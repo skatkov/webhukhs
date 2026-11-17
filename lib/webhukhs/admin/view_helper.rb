@@ -83,6 +83,25 @@ module Webhukhs
         link_to(label, query, class: "sort-link")
       end
 
+      # A column header with the widest value the column will ever hold laid out invisibly beneath
+      # it, so the column is already that wide before anything arrives in it.
+      #
+      # The status column is the one that needs it: retrying a webhook replaces its row, and a
+      # `failed_validation` coming back as `received` would otherwise narrow the column and shift
+      # every column after it sideways. The sizer is a badge like the real ones - same font, same
+      # padding - with its height taken away, so it costs the layout nothing but its width.
+      #
+      # geneva_drive does this by computing a `min-width` in `ch` and emitting a `<style>` tag; here
+      # the CSP allows no inline styles and there is no nonce to give one, so the width comes from
+      # laying the text out rather than from measuring it.
+      #
+      # @param title [String] the header
+      # @param widest [String] the widest value the column will hold
+      # @return [ActiveSupport::SafeBuffer]
+      def column_header_sized_for(title, widest)
+        safe_join([title, tag.span(widest, class: "badge column-sizer", "aria-hidden": true)])
+      end
+
       # Button copying a value to the clipboard (see admin.js).
       #
       # @param value [String] text to copy

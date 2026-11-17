@@ -241,6 +241,25 @@ class AdminClickThrough < ActiveSupport::TestCase
     assert_equal "error", other.reload.status
   end
 
+  # Retrying replaces a row, and the status in it gets shorter - "failed_validation" is the longest
+  # there is. The column is held open at that width by the sizer in its header, so nothing moves.
+  test "keeps the columns where they are when a status gets shorter" do
+    webhook = create_webhook(handler_event_id: "evt-to-retry", status: "failed_validation")
+
+    visit ""
+    widths = -> { @browser.evaluate("Array.from(document.querySelectorAll('thead th'), (th) => th.offsetWidth)") }
+    before = widths.call
+
+    @browser.at_css("tr#webhook-#{webhook.id} button.btn-retry").click
+    wait_for("the row to come back as received") do
+      @browser.evaluate("document.querySelector('tr#webhook-#{webhook.id} .badge').textContent") == "received"
+    end
+
+    assert_equal before, widths.call, "No column should have changed width"
+    # And the sizer itself takes up no room
+    assert_equal 0, @browser.evaluate("document.querySelector('th .column-sizer').offsetHeight")
+  end
+
   # The retry button sits in the row, which is clickable as a whole - pressing the button must not
   # also open the webhook
   test "opens the webhook from a click anywhere else in the row, but not from the retry button" do

@@ -20,7 +20,7 @@
   columns = [
     sort_link(direction: @direction),
     "Handler",
-    "Status",
+    column_header_sized_for("Status", status_options.keys.max_by(&:length)),
     "Event id",
     "Received",
     "Updated",

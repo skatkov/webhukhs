@@ -37,7 +37,9 @@ class AdminTest < ActionDispatch::IntegrationTest
     assert_select "th a.sort-link[href=?]", "/admin/?direction=asc", text: "Id ▼"
     assert_select "th a", count: 1
     assert_select "th a.sort-link span.sort-arrow", text: "▼", count: 1
-    assert_equal ["Id ▼", "Handler", "Status", "Event id", "Received", "Updated", "Retry"], css_select("th").map(&:text)
+    # The status header carries a hidden sizer with the longest status in it, hence the tail
+    assert_equal ["Id ▼", "Handler", "Statusfailed_validation", "Event id", "Received", "Updated", "Retry"], css_select("th").map(&:text)
+    assert_select "th span.badge.column-sizer[aria-hidden=true]", text: "failed_validation"
   end
 
   test "groups receipt and update timestamps in the rightmost columns" do
