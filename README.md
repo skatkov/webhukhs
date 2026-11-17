@@ -75,10 +75,10 @@ Now you will be able to accept webhooks on `/webhooks/example` path.
 ## Keeping an existing webhook URL
 
 If you are moving a webhook you already receive onto Webhukhs, the senders have your current URL
-configured - and they are often the kind of senders you cannot re-point: every repository owner,
-every tenant, every customer who filled in a form in someone else's dashboard. You do not have to
-mount the engine at all. Route the path you already have straight at the controller, and name the
-handler in `defaults`:
+configured already - and it's likely to be a pain to tweak it everywhere.
+
+Route the path you already have to the webhukhs controller, and set the `service_id`
+as a default param:
 
 ```ruby
 # config/routes.rb
@@ -93,25 +93,6 @@ anything changed. The handler is configured as usual:
 ```ruby
 config.active_handlers = {"github" => "GithubHandler"}
 ```
-
-Four things tend to bite on the way across:
-
-- **You can no longer answer with the outcome.** The old controller did the work and rendered the
-  result; Webhukhs renders `{"ok": true}` and the work happens afterwards. If the sender's retry
-  behaviour depended on your status code, decide what it should see now.
-- **"Nothing to do" becomes a status rather than a response.** A controller that answered `304` or
-  `204` for a delivery it did not care about has nowhere to put that any more. Call
-  `received_webhook.skipped!` in `process` and return - the delivery then reads as `skipped` in the
-  admin, which is more use than the log line it would otherwise have been.
-- **Only POST moves.** If the same path also served a GET - an explainer for whoever pastes the URL
-  into a browser, say - leave that route pointing at your controller.
-- **Read the request off the webhook, not off `request`.** The handler runs in a job, so the live
-  request is long gone. `received_webhook.body` and `received_webhook.request` give you the body,
-  the headers and the route params as they arrived.
-
-There is nothing to do about CSRF: `Webhukhs::ReceiveWebhooksController` is an
-`ActionController::API`, so the `skip_before_action :verify_authenticity_token` your old controller
-needed has nothing left to skip.
 
 ## Admin
 
