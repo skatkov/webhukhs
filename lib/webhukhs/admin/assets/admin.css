@@ -132,6 +132,10 @@ p.muted {
   background: var(--color-bad-bg);
   color: var(--color-bad-text);
 }
+.flash.notice {
+  background: var(--color-ok-bg);
+  color: var(--color-ok-text);
+}
 
 .breadcrumb {
   font-size: 13px;
@@ -284,24 +288,19 @@ p.muted {
 .admin-table tbody tr:nth-child(even) {
   background: var(--color-bg-subtle);
 }
-/* Rows with a .row-link are clickable as a whole: the link's ::after covers the row */
-.admin-table tbody tr:has(> td > .row-link) {
-  position: relative;
+/* A row with a data-href is clickable as a whole - admin.js navigates, so nothing is laid over
+   the row and the buttons in it stay reachable */
+.admin-table tbody tr[data-href] {
   cursor: pointer;
 }
-.admin-table tbody tr:has(> td > .row-link):hover {
+.admin-table tbody tr[data-href]:hover {
   background: var(--color-bg-hover);
 }
-.admin-table tbody tr:has(> td > .row-link:focus-visible) {
+.admin-table tbody tr[data-href]:has(a:focus-visible) {
   outline: 2px solid var(--color-link);
   outline-offset: -2px;
 }
-.row-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-.row-link:focus-visible {
+.admin-table tbody tr[data-href] a:focus-visible {
   outline: none;
 }
 
@@ -345,6 +344,17 @@ p.muted {
 .header-value {
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* Holds a column open at the width of its widest value - laid out, but with no height and nothing
+   to see. See #column_header_sized_for */
+.admin-table th .column-sizer {
+  display: block;
+  height: 0;
+  padding-block: 0;
+  border-block: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 /* Status badges */
@@ -432,6 +442,33 @@ h1 .badge {
 }
 .btn-copy-panel.copied {
   color: var(--color-ok-text);
+}
+
+/* Retry button, on the detail page and in every row of the listing */
+.btn-retry {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 10px;
+  color: var(--color-text);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-retry:hover {
+  background: var(--color-bg-hover);
+}
+.btn-retry:disabled {
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  cursor: not-allowed;
+}
+.detail-heading {
+  margin-bottom: 16px;
+}
+.admin-table td:has(> form.button_to) {
+  width: 1%;
 }
 
 /* Copy button */

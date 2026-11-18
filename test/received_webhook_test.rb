@@ -28,6 +28,8 @@ unless ActiveRecord::Base.connection.data_source_exists?("string_id_received_web
 end
 
 class ReceivedWebhookTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   cover "Webhukhs::ReceivedWebhook*"
 
   teardown do
@@ -256,5 +258,56 @@ class ReceivedWebhookTest < ActiveSupport::TestCase
     )
 
     assert_match(/\A[0-9a-f-]{36}\z/, webhook.id)
+  end
+
+  # The three states a webhook comes to rest in without having been processed, and only those:
+  # `processed` is done, and the other two are already on their way.
+  test "is retryable in the states it did not get processed in" do
+    {
+      "error" => true,
+      "failed_validation" => true,
+      "skipped" => true,
+      "processed" => false,
+      "received" => false,
+      "processing" => false
+    }.each do |status, retryable|
+      assert_equal retryable, create_webhook(status: status).retryable?, "#{status} should#{" not" unless retryable} be retryable"
+    end
+  end
+
+  test "retry puts the webhook back in line and enqueues it like a fresh delivery" do
+    webhook = create_webhook(status: "error")
+
+    assert_enqueued_with job: Webhukhs::ProcessingJob, args: [webhook] do
+      webhook.retry!
+    end
+
+    assert_predicate webhook.reload, :received?
+  end
+
+  test "retry refuses a webhook that is not retryable, without enqueueing anything" do
+    ["processed", "received", "processing"].each do |status|
+      webhook = create_webhook(status: status)
+
+      error = assert_raises(StateMachineEnum::InvalidTransition) { webhook.retry! }
+      assert_equal "status", error.attribute_name
+      assert_equal status, error.from_state
+      assert_equal "received", error.to_state
+
+      assert_empty enqueued_jobs, "Nothing should have been enqueued for a #{status} webhook"
+      assert_equal status, webhook.reload.status
+    end
+  end
+
+  private
+
+  def create_webhook(**attributes)
+    Webhukhs::ReceivedWebhook.create!(
+      handler_module_name: "WebhookTestHandler",
+      handler_event_id: SecureRandom.uuid,
+      body: '{"event":"thing.happened"}',
+      request_headers: {},
+      **attributes
+    )
   end
 end

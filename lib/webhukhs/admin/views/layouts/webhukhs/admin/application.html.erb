@@ -16,6 +16,10 @@
     </nav>
   </header>
   <main>
+    <%# Set by the retry button, the one thing in here that changes something %>
+    <% flash.each do |level, message| %>
+      <p class="flash <%= (level.to_s == "notice") ? "notice" : "alert" %>"><%= message %></p>
+    <% end %>
     <%= yield %>
   </main>
 </body>

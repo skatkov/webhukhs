@@ -3,7 +3,10 @@
   <%= link_to "Received webhooks", received_webhooks_path %> / <code><%= @webhook.id %></code>
 </nav>
 
-<h1><%= @webhook.handler_module_name %> <span class="badge <%= @webhook.status_class %>"><%= @webhook.status %></span></h1>
+<div class="page-heading detail-heading">
+  <h1><%= @webhook.handler_module_name %> <span class="badge <%= @webhook.status_class %>"><%= @webhook.status %></span></h1>
+  <%= retry_button(@webhook) %>
+</div>
 
 <h2>Attributes</h2>
 <div class="table-scroll attr-scroll">

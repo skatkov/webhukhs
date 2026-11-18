@@ -1,0 +1,15 @@
+<%# One webhook as a row of the listing. Rendered on its own as the answer to a retry pressed in
+    the listing, so that the row that comes back is the same markup the index renders.
+
+    The row carries its link in `data-href` rather than being covered by a stretched one - admin.js
+    navigates on a click that did not land on something clickable of its own, so the retry button
+    in the last cell is just a button, with nothing laid over it. %>
+<tr id="<%= received_webhook_row_id(webhook) %>" data-href="<%= received_webhook_path(webhook) %>">
+  <td><%= link_to tag.code(short_id(webhook.id.to_s), class: "cell-ellipsis cell-id"), received_webhook_path(webhook), title: webhook.id, "aria-label": webhook.id %></td>
+  <td><%= webhook.handler_module_name %></td>
+  <td><span class="badge <%= webhook.status_class %>"><%= webhook.status %></span></td>
+  <td><%= tag.code(webhook.handler_event_id, class: "cell-ellipsis", title: webhook.handler_event_id) %></td>
+  <td><%= time_tag(webhook.created_at, webhook.created_at.iso8601) %></td>
+  <td><%= time_tag(webhook.updated_at, webhook.updated_at.iso8601) %></td>
+  <td><%= retry_button(webhook) %></td>
+</tr>

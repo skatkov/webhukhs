@@ -148,6 +148,35 @@ migration is needed. Click **ID** to switch between ascending and descending ord
 are not sortable, avoiding expensive sorts on large webhook tables. Handler and status filters are
 still available.
 
+### Retrying a webhook
+
+A webhook that did not get processed can be put back in line, from its own page or from the listing:
+
+![The admin listing with a Retry button in every row, disabled for the webhooks that have been processed](.github/screenshots/admin-retry-listing.png)
+
+Pressed in the listing, the button replaces that one row with what it became - the status, the
+timestamp and the button itself come back changed and the page stays where it is. On the webhook's
+own page it reloads the page. Without JavaScript the same form submits normally and lands on the
+webhook, so nothing here depends on the browser being able to run anything.
+
+Retrying takes the webhook back to `received` and enqueues it exactly as a fresh delivery would be,
+so it goes through the same handler validation and processing as the first attempt. That makes the
+button worth having mostly for the delivery your side refused: a signature secret that had not been
+configured yet, a handler that raised on something it has since learned to cope with.
+
+The button is enabled for the three states a webhook comes to rest in without having been processed
+- `error`, `failed_validation` and `skipped` - and disabled for `processed`, as well as for
+`received` and `processing`, which are already on their way. `Webhukhs::ReceivedWebhook#retryable?`
+answers the same question in code, and `#retry!` does it:
+
+```ruby
+webhook = Webhukhs::ReceivedWebhook.find(id)
+webhook.retry! if webhook.retryable?
+```
+
+`#retry!` raises `StateMachineEnum::InvalidTransition` for a webhook that cannot be retried, rather
+than quietly enqueueing a second run of something that already succeeded.
+
 UUIDs are abbreviated in the list, for example `01a1..6e51`; hover over the ID to see the full
 value. Detail pages and copied IDs retain the full UUID.
 
