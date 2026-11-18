@@ -80,6 +80,9 @@ class WebhukhsTestApp < Rails::Application
   routes.append do
     mount Webhukhs::Engine, at: "/webhukhs"
     post "/per-user-webhukhs/:user_id/:service_id" => "webhukhs/receive_webhooks#create"
+    # Stands in for a webhook URL an app already had before it adopted Webhukhs:
+    # no :service_id in the path, named in the route defaults instead
+    post "/legacy-hook-url", to: "webhukhs/receive_webhooks#create", defaults: {service_id: "test"}
     mount Webhukhs::Admin::Engine, at: "/admin"
   end
 end

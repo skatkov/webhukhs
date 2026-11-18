@@ -72,6 +72,28 @@ end
 
 Now you will be able to accept webhooks on `/webhooks/example` path.
 
+## Keeping an existing webhook URL
+
+If you are moving a webhook you already receive onto Webhukhs, the senders have your current URL
+configured already - and it's likely to be a pain to tweak it everywhere.
+
+Route the path you already have to the webhukhs controller, and set the `service_id`
+as a default param:
+
+```ruby
+# config/routes.rb
+# Was: post "/github-hook", to: "github_hook#post"
+post "/github-hook", to: "webhukhs/receive_webhooks#create", defaults: {service_id: "github"}
+```
+
+`service_id` is a path segment when you mount the engine, but the controller only ever reads it out
+of `params` - so a route default does the job just as well, and the senders never learn that
+anything changed. The handler is configured as usual:
+
+```ruby
+config.active_handlers = {"github" => "GithubHandler"}
+```
+
 ## Admin
 
 Webhukhs comes with a read-only admin for looking at the webhooks you have received: a sortable,
